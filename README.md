@@ -229,31 +229,3 @@ docker compose logs
 docker compose down -v
 docker compose up --build
 ```
-
-## 📝 Roadmap
-
-- [ ] Testes automatizados completos (Jest + Supertest)
-- [ ] CI/CD com GitHub Actions
-- [ ] Relatórios Allure
-- [ ] Testes de performance (K6)
-- [ ] Análise de código (SonarQube)
-- [ ] Frontend React (futuro)
-
-## 👤 Autor
-
-**Seu Nome**
-- QA Engineer com 8+ anos de experiência
-- LinkedIn: [seu-linkedin](https://linkedin.com/in/seu-perfil)
-- Email: seu@email.com
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 🙏 Agradecimentos
-
-Projeto desenvolvido como portfólio de QA Automation para demonstrar habilidades em:
-- Desenvolvimento de APIs
-- Testes automatizados
-- DevOps e CI/CD
-- Boas práticas de engenharia de software
