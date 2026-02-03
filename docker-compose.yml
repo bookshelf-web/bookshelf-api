@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: bookshelf-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bookshelf
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bookshelf-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d bookshelf"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: bookshelf-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: bookshelf
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      JWT_SECRET: your-super-secret-jwt-key
+      PORT: 3000
+      API_PREFIX: /api
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - bookshelf-network
+
+volumes:
+  postgres_data:
+
+networks:
+  bookshelf-network:
+    driver: bridge

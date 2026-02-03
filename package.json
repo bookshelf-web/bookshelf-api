@@ -1,0 +1,60 @@
+{
+  "name": "bookshelf-api",
+  "version": "1.0.0",
+  "description": "API para gerenciamento de biblioteca pessoal",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest --coverage --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "typeorm": "typeorm-ts-node-commonjs"
+  },
+  "keywords": ["api", "books", "library", "typescript"],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "typeorm": "^0.3.17",
+    "reflect-metadata": "^0.1.13",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1",
+    "express-validator": "^7.0.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "swagger-ui-express": "^5.0.0",
+    "swagger-jsdoc": "^6.2.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/jest": "^29.5.11",
+    "@types/supertest": "^6.0.2",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "supertest": "^6.3.3",
+    "@types/swagger-ui-express": "^4.1.6",
+   "@types/swagger-jsdoc": "^6.0.4"
+  }
+}
+
+
+
+
+
+
+
+
+
+
