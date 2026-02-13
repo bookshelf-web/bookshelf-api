@@ -331,15 +331,6 @@ bookshelf-api/
 - ✅ **Validação de Input** - Campos obrigatórios validados
 - ✅ **Isolamento de Dados** - Usuários isolados por userId
 
-### Recomendações para Produção
-
-- [ ] Use HTTPS em produção
-- [ ] Configure variáveis de ambiente seguras
-- [ ] Implemente refresh tokens
-- [ ] Adicione logging estruturado (Winston)
-- [ ] Configure backup do banco de dados
-- [ ] Use serviços de monitoramento (Sentry, DataDog)
-
 ## 🚀 Deploy
 
 ### Variáveis de Ambiente Necessárias
@@ -365,32 +356,3 @@ npm run build
 # Start
 npm start
 ```
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👨‍💻 Autor
-
-**Seu Nome**
-- GitHub: [@seu-usuario](https://github.com/seu-usuario)
-- LinkedIn: [Seu Nome](https://linkedin.com/in/seu-perfil)
-- Portfolio: [seu-site.com](https://seu-site.com)
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📞 Suporte
-
-Se você tiver alguma dúvida ou problema, abra uma [issue](https://github.com/seu-usuario/bookshelf-api/issues).
-
----
-
-⭐ Se este projeto te ajudou, considere dar uma estrela!
