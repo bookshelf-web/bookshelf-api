@@ -1,0 +1,22 @@
+{
+    "validUser": {
+      "name": "João Silva",
+      "email": "joao.silva@test.com",
+      "password": "senha123"
+    },
+    "anotherUser": {
+      "name": "Maria Santos",
+      "email": "maria.santos@test.com",
+      "password": "senha456"
+    },
+    "invalidEmail": {
+      "name": "Test User",
+      "email": "invalid-email",
+      "password": "senha123"
+    },
+    "shortPassword": {
+      "name": "Test User",
+      "email": "test@test.com",
+      "password": "123"
+    }
+  }

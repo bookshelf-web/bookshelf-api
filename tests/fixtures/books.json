@@ -1,0 +1,33 @@
+{
+    "validBook": {
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "isbn": "9780132350884",
+      "publisher": "Prentice Hall",
+      "publishedYear": 2008,
+      "pages": 464,
+      "language": "pt-BR"
+    },
+    "anotherBook": {
+      "title": "The Pragmatic Programmer",
+      "author": "Andrew Hunt",
+      "pages": 352,
+      "publishedYear": 1999
+    },
+    "bookWithoutTitle": {
+      "author": "Test Author"
+    },
+    "bookWithoutAuthor": {
+      "title": "Test Book"
+    },
+    "bookFutureYear": {
+      "title": "Future Book",
+      "author": "Test Author",
+      "publishedYear": 2030
+    },
+    "bookInvalidISBN": {
+      "title": "Test Book",
+      "author": "Test Author",
+      "isbn": "123"
+    }
+  }

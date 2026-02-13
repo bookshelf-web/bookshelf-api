@@ -1,9 +1,9 @@
-import 'reflect-metadata';
-import dotenv from 'dotenv';
 import app from './app';
 import { initializeDatabase } from './config/database';
+import { validateEnv } from './config/env';
 
-dotenv.config();
+// Validar variáveis de ambiente antes de iniciar
+validateEnv();
 
 const PORT = process.env.PORT || 3000;
 
@@ -20,6 +20,7 @@ async function startServer() {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 API URL: http://localhost:${PORT}/api`);
+      console.log(`📖 API Docs: http://localhost:${PORT}/api-docs`);
       console.log(`❤️  Health Check: http://localhost:${PORT}/health`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     });

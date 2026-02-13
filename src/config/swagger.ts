@@ -1,17 +1,14 @@
-import swaggerJsdoc from 'swagger-jsdoc';
+import { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
 
-const options: swaggerJsdoc.Options = {
+const swaggerOptions: swaggerJSDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'BookShelf API',
       version: '1.0.0',
-      description: 'API para gerenciamento de biblioteca pessoal - Portfólio QA',
-      contact: {
-        name: 'Seu Nome',
-        email: 'seu@email.com',
-      },
+      description: 'API para gerenciamento de biblioteca pessoal',
     },
     servers: [
       {
@@ -28,38 +25,80 @@ const options: swaggerJsdoc.Options = {
         },
       },
       schemas: {
-        User: {
+        RegisterInput: {
           type: 'object',
           required: ['name', 'email', 'password'],
           properties: {
-            id: {
-              type: 'string',
-              format: 'uuid',
-              description: 'ID do usuário',
-            },
             name: {
               type: 'string',
               description: 'Nome do usuário',
+              example: 'João Silva',
             },
             email: {
               type: 'string',
               format: 'email',
               description: 'Email do usuário',
+              example: 'joao@example.com',
             },
             password: {
               type: 'string',
               format: 'password',
               description: 'Senha do usuário (mínimo 6 caracteres)',
+              minLength: 6,
+              example: 'senha123',
+            },
+          },
+        },
+        LoginInput: {
+          type: 'object',
+          required: ['email', 'password'],
+          properties: {
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'Email do usuário',
+              example: 'joao@example.com',
+            },
+            password: {
+              type: 'string',
+              format: 'password',
+              description: 'Senha do usuário',
+              example: 'senha123',
+            },
+          },
+        },
+        AuthResponse: {
+          type: 'object',
+          properties: {
+            message: {
+              type: 'string',
+              example: 'Usuário criado com sucesso',
+            },
+            token: {
+              type: 'string',
+              description: 'Token JWT para autenticação',
+            },
+            user: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                },
+                name: {
+                  type: 'string',
+                },
+                email: {
+                  type: 'string',
+                },
+              },
             },
           },
         },
         Book: {
           type: 'object',
-          required: ['title', 'author'],
           properties: {
             id: {
               type: 'string',
-              format: 'uuid',
               description: 'ID do livro',
             },
             title: {
@@ -72,28 +111,28 @@ const options: swaggerJsdoc.Options = {
             },
             isbn: {
               type: 'string',
-              description: 'ISBN do livro (10 ou 13 dígitos)',
+              description: 'ISBN do livro (único)',
+              example: '9780132350884',
             },
             publisher: {
               type: 'string',
               description: 'Editora',
+              example: 'Prentice Hall',
             },
             publishedYear: {
               type: 'integer',
               description: 'Ano de publicação',
+              example: 2008,
             },
             pages: {
               type: 'integer',
               description: 'Número de páginas',
+              example: 464,
             },
             language: {
               type: 'string',
-              default: 'pt-BR',
               description: 'Idioma do livro',
-            },
-            coverUrl: {
-              type: 'string',
-              description: 'URL da capa do livro',
+              example: 'pt-BR',
             },
             description: {
               type: 'string',
@@ -102,32 +141,117 @@ const options: swaggerJsdoc.Options = {
             status: {
               type: 'string',
               enum: ['to_read', 'reading', 'read'],
-              default: 'to_read',
-              description: 'Status de leitura',
+              description: 'Status de leitura do livro',
             },
-            rating: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 5,
-              description: 'Avaliação (1-5)',
-            },
-            notes: {
+            userId: {
               type: 'string',
-              description: 'Anotações sobre o livro',
+              description: 'ID do usuário dono do livro',
             },
-            startedAt: {
+            createdAt: {
               type: 'string',
               format: 'date-time',
-              description: 'Data que começou a ler',
             },
-            finishedAt: {
+            updatedAt: {
               type: 'string',
               format: 'date-time',
-              description: 'Data que terminou de ler',
             },
           },
         },
-        Error: {
+        CreateBookInput: {
+          type: 'object',
+          required: ['title', 'author'],
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Título do livro',
+              example: 'Clean Code',
+            },
+            author: {
+              type: 'string',
+              description: 'Autor do livro',
+              example: 'Robert C. Martin',
+            },
+            isbn: {
+              type: 'string',
+              description: 'ISBN do livro (opcional, mas deve ser único se fornecido)',
+              example: '9780132350884',
+            },
+            publisher: {
+              type: 'string',
+              description: 'Editora (opcional)',
+              example: 'Prentice Hall',
+            },
+            publishedYear: {
+              type: 'integer',
+              description: 'Ano de publicação (opcional, não pode ser no futuro)',
+              example: 2008,
+            },
+            pages: {
+              type: 'integer',
+              description: 'Número de páginas (opcional)',
+              example: 464,
+            },
+            language: {
+              type: 'string',
+              description: 'Idioma do livro (opcional)',
+              example: 'pt-BR',
+            },
+            description: {
+              type: 'string',
+              description: 'Descrição do livro (opcional)',
+            },
+          },
+        },
+        UpdateBookInput: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Título do livro',
+              example: 'Clean Code',
+            },
+            author: {
+              type: 'string',
+              description: 'Autor do livro',
+              example: 'Robert C. Martin',
+            },
+            isbn: {
+              type: 'string',
+              description: 'ISBN do livro',
+              example: '9780132350884',
+            },
+            publisher: {
+              type: 'string',
+              description: 'Editora',
+              example: 'Prentice Hall',
+            },
+            publishedYear: {
+              type: 'integer',
+              description: 'Ano de publicação',
+              example: 2008,
+            },
+            pages: {
+              type: 'integer',
+              description: 'Número de páginas',
+              example: 464,
+            },
+            language: {
+              type: 'string',
+              description: 'Idioma do livro',
+              example: 'pt-BR',
+            },
+            description: {
+              type: 'string',
+              description: 'Descrição do livro',
+            },
+            status: {
+              type: 'string',
+              enum: ['to_read', 'reading', 'read'],
+              description: 'Status de leitura',
+            },
+          },
+        },
+        ErrorResponse: {
           type: 'object',
           properties: {
             error: {
@@ -138,23 +262,28 @@ const options: swaggerJsdoc.Options = {
         },
       },
     },
-    tags: [
+    security: [
       {
-        name: 'Auth',
-        description: 'Endpoints de autenticação',
-      },
-      {
-        name: 'Books',
-        description: 'Endpoints de gerenciamento de livros',
-      },
-      {
-        name: 'Stats',
-        description: 'Endpoints de estatísticas',
+        bearerAuth: [],
       },
     ],
   },
-  apis: ['./src/routes/*.ts'],
+
+  /**
+   * ⚠️ MUITO IMPORTANTE
+   * Aqui é onde o Swagger encontra TODAS as rotas
+   */
+  apis: [
+    './src/modules/**/*.ts',
+    './src/routes.ts',
+  ],
 };
 
-export const swaggerSpec = swaggerJsdoc(options);
-export { swaggerUi };
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
+function setupSwagger(app: Express) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
+
+export default setupSwagger;
+export { setupSwagger };

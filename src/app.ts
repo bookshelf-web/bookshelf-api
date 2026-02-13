@@ -1,56 +1,40 @@
-import 'reflect-metadata';
-import express, { Application } from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
-import dotenv from 'dotenv';
+import routes from './routes';
+import setupSwagger from './config/swagger';
 
-import authRoutes from './routes/authRoutes';
-import booksRoutes from './routes/booksRoutes';
-import statsRoutes from './routes/statsRoutes';
-import { errorHandler } from './middlewares/errorHandler';
-import { swaggerUi, swaggerSpec } from './config/swagger';
+const app = express();
 
-dotenv.config();
-
-const app: Application = express();
-
-// Middlewares
+// Segurança - Headers HTTP seguros
 app.use(helmet());
-app.use(cors());
-app.use(morgan('dev'));
+
+// CORS configurado - permitir apenas origens específicas
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api', routes);
 
-// Rota de health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
-// Redirect para Swagger
-app.get('/', (req, res) => {
-  res.redirect('/api-docs');
-});
-
-// Rotas da API
-const apiPrefix = process.env.API_PREFIX || '/api';
-app.use(`${apiPrefix}/auth`, authRoutes);
-app.use(`${apiPrefix}/books`, booksRoutes);
-app.use(`${apiPrefix}/stats`, statsRoutes);
-
-// Rota 404
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
-});
-
-// Error handler
-app.use(errorHandler);
+/**
+ * Swagger
+ */
+setupSwagger(app);
 
 export default app;

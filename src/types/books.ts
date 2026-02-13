@@ -1,18 +1,7 @@
-import { Request } from 'express';
-
-export interface AuthRequest extends Request {
-  userId?: string;
-}
-
-export interface JWTPayload {
-  userId: string;
-  email: string;
-}
-
 export enum BookStatus {
   TO_READ = 'to_read',
   READING = 'reading',
-  READ = 'read'
+  READ = 'read',
 }
 
 export interface CreateBookDTO {
@@ -23,8 +12,10 @@ export interface CreateBookDTO {
   publishedYear?: number;
   pages?: number;
   language?: string;
-  coverUrl?: string;
   description?: string;
+  rating?: number;
+  notes?: string;
+  coverUrl?: string;
 }
 
 export interface UpdateBookDTO {
@@ -35,21 +26,13 @@ export interface UpdateBookDTO {
   publishedYear?: number;
   pages?: number;
   language?: string;
-  coverUrl?: string;
   description?: string;
   status?: BookStatus;
   rating?: number;
   notes?: string;
+  coverUrl?: string;
 }
 
-export interface BookFilters {
-  status?: BookStatus;
-  rating?: number;
-  author?: string;
-  title?: string;
-  publishedYear?: number;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+export interface UpdateBookStatusDTO {
+  status: BookStatus;
 }

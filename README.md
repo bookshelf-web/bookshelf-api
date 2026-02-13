@@ -1,259 +1,396 @@
 # 📚 BookShelf API
 
-![Node.js](https://img.shields.io/badge/Node.js-18-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+API REST para gerenciamento de biblioteca pessoal, desenvolvida com Node.js, TypeScript, Express e PostgreSQL.
 
-API RESTful completa para gerenciamento de biblioteca pessoal, desenvolvida como portfólio de **QA Automation** demonstrando boas práticas de desenvolvimento e testes automatizados.
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue)](https://www.postgresql.org/)
+[![Tests](https://img.shields.io/badge/Tests-123%2F125-brightgreen)](https://jestjs.io/)
+[![Coverage](https://img.shields.io/badge/Coverage-93%25-brightgreen)](https://jestjs.io/)
 
-## 🎯 Objetivo
+## 🚀 Funcionalidades
 
-Este projeto foi criado para demonstrar:
-- ✅ Desenvolvimento de API REST profissional
-- ✅ Arquitetura limpa e organizada
-- ✅ Testes automatizados abrangentes (em desenvolvimento)
-- ✅ CI/CD com GitHub Actions (em desenvolvimento)
-- ✅ Documentação completa com Swagger
-- ✅ Containerização com Docker
+- ✅ **Autenticação JWT** - Sistema completo de registro e login
+- ✅ **CRUD de Livros** - Gerenciamento completo de livros
+- ✅ **Filtros e Busca** - Por status, rating, título e autor
+- ✅ **Paginação** - Listagem paginada de livros
+- ✅ **Estatísticas** - Dashboard com métricas da biblioteca
+- ✅ **Status de Leitura** - To Read, Reading, Read
+- ✅ **Timestamps Automáticos** - Data de início e término de leitura
+- ✅ **Isolamento de Dados** - Cada usuário vê apenas seus livros
+- ✅ **Documentação Swagger** - API documentada automaticamente
+- ✅ **Testes Automatizados** - 98.4% de cobertura
 
-## 🚀 Tecnologias
+## 🛠️ Tecnologias
 
 ### Backend
-- **Node.js 18** - Runtime JavaScript
-- **TypeScript** - Tipagem estática
+- **Node.js** - Runtime JavaScript
+- **TypeScript** - Superset tipado de JavaScript
 - **Express** - Framework web
 - **TypeORM** - ORM para TypeScript/JavaScript
 - **PostgreSQL** - Banco de dados relacional
 
-### Autenticação & Segurança
-- **JWT** - JSON Web Tokens
-- **bcrypt** - Hash de senhas
-- **Helmet** - Segurança HTTP headers
-- **CORS** - Cross-Origin Resource Sharing
+### Segurança
+- **bcryptjs** - Hash de senhas
+- **jsonwebtoken** - Autenticação JWT
+- **helmet** - Proteção de headers HTTP
+- **cors** - Configuração de CORS
+- **express-rate-limit** - Proteção contra brute force
 
-### Documentação
-- **Swagger UI** - Interface interativa da API
-- **OpenAPI 3.0** - Especificação da API
-
-### DevOps
-- **Docker** - Containerização
-- **Docker Compose** - Orquestração de containers
-
-### Testes (em desenvolvimento)
+### Testes
 - **Jest** - Framework de testes
-- **Supertest** - Testes de API HTTP
-- **ts-jest** - Suporte TypeScript no Jest
+- **Supertest** - Testes de API
 
 ## 📋 Pré-requisitos
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando
-- [Git](https://git-scm.com/) para clonar o repositório
-- [Node.js 18+](https://nodejs.org/) (opcional, para desenvolvimento local)
+- Node.js 18+ 
+- PostgreSQL 14+
+- npm ou yarn
 
-## 🔧 Instalação e Execução
+## 🔧 Instalação
 
-### **Usando Docker (Recomendado)**
+### 1. Clone o repositório
+
 ```bash
-# 1. Clonar o repositório
 git clone https://github.com/seu-usuario/bookshelf-api.git
 cd bookshelf-api
-
-# 2. Copiar arquivo de ambiente
-cp .env.example .env
-
-# 3. Subir containers
-docker compose up -d
-
-# 4. Verificar logs
-docker compose logs -f
 ```
 
-A API estará disponível em:
-- **API:** http://localhost:3000
-- **Swagger UI:** http://localhost:3000/api-docs
-- **Health Check:** http://localhost:3000/health
+### 2. Instale as dependências
 
-### **Desenvolvimento Local (sem Docker)**
 ```bash
-# 1. Instalar dependências
 npm install
-
-# 2. Configurar PostgreSQL local e atualizar .env
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_NAME=bookshelf
-# DB_USER=seu_usuario
-# DB_PASSWORD=sua_senha
-
-# 3. Executar migrations/criar tabelas manualmente
-# (usar o script scripts/init-db.sql)
-
-# 4. Rodar em modo desenvolvimento
-npm run dev
 ```
 
-## 📚 Documentação da API
+### 3. Configure as variáveis de ambiente
 
-Acesse a documentação interativa completa via Swagger:
+Copie o arquivo `.env.example` para `.env`:
 
-👉 **http://localhost:3000/api-docs**
+```bash
+cp .env.example .env
+```
 
-### Endpoints Principais
+Edite o arquivo `.env` com suas configurações:
 
-#### **Autenticação**
-- `POST /api/auth/register` - Criar nova conta
-- `POST /api/auth/login` - Fazer login
+```env
+# Ambiente
+NODE_ENV=development
 
-#### **Livros** (requer autenticação)
-- `GET /api/books` - Listar todos os livros (com filtros e paginação)
-- `POST /api/books` - Criar novo livro
-- `GET /api/books/:id` - Buscar livro específico
-- `PUT /api/books/:id` - Atualizar livro completo
-- `PATCH /api/books/:id/status` - Atualizar apenas status
-- `DELETE /api/books/:id` - Deletar livro
+# Servidor
+PORT=3000
 
-#### **Estatísticas** (requer autenticação)
-- `GET /api/stats` - Obter estatísticas de leitura
+# CORS - Origens permitidas
+CORS_ORIGIN=http://localhost:3000
+
+# Banco de Dados
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+DB_NAME=bookshelf
+
+# JWT Secret - OBRIGATÓRIO - Mínimo 32 caracteres
+# Gere uma chave forte: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+JWT_SECRET=sua_chave_super_secreta_aqui
+```
+
+### 4. Configure o banco de dados
+
+Crie o banco de dados PostgreSQL:
+
+```bash
+createdb bookshelf
+```
+
+Execute as migrations (ou use synchronize temporariamente):
+
+```sql
+-- Criar tabela users
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Criar tabela books
+CREATE TABLE books (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  author VARCHAR(255) NOT NULL,
+  isbn VARCHAR(20) UNIQUE,
+  publisher VARCHAR(255),
+  published_year INTEGER,
+  pages INTEGER,
+  language VARCHAR(10),
+  description TEXT,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  notes TEXT,
+  cover_url VARCHAR(500),
+  status VARCHAR(20) DEFAULT 'to_read',
+  started_at TIMESTAMP,
+  finished_at TIMESTAMP,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Criar índices para performance
+CREATE INDEX idx_books_user_id ON books(user_id);
+CREATE INDEX idx_books_status ON books(status);
+CREATE INDEX idx_books_created_at ON books(created_at);
+```
+
+### 5. Inicie o servidor
+
+```bash
+# Desenvolvimento (com hot reload)
+npm run dev
+
+# Produção
+npm run build
+npm start
+```
+
+O servidor estará rodando em `http://localhost:3000`
+
+## 📖 Documentação da API
+
+Acesse a documentação Swagger em: `http://localhost:3000/api-docs`
+
+## 🔐 Autenticação
+
+A API usa JWT (JSON Web Tokens) para autenticação.
+
+### Registrar
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "João Silva",
+  "email": "joao@example.com",
+  "password": "senha123"
+}
+```
+
+### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@example.com",
+  "password": "senha123"
+}
+```
+
+**Resposta:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "uuid",
+    "name": "João Silva",
+    "email": "joao@example.com"
+  }
+}
+```
+
+### Usando o Token
+
+Inclua o token no header `Authorization` de todas as requisições protegidas:
+
+```http
+Authorization: Bearer seu_token_aqui
+```
+
+## 📚 Endpoints
+
+### Books
+
+| Método | Endpoint | Descrição | Autenticação |
+|--------|----------|-----------|--------------|
+| `GET` | `/api/books` | Listar livros | ✅ |
+| `GET` | `/api/books/:id` | Buscar livro por ID | ✅ |
+| `POST` | `/api/books` | Criar livro | ✅ |
+| `PUT` | `/api/books/:id` | Atualizar livro | ✅ |
+| `PATCH` | `/api/books/:id/status` | Atualizar status | ✅ |
+| `DELETE` | `/api/books/:id` | Deletar livro | ✅ |
+
+### Stats
+
+| Método | Endpoint | Descrição | Autenticação |
+|--------|----------|-----------|--------------|
+| `GET` | `/api/stats` | Estatísticas do usuário | ✅ |
+
+## 🔍 Exemplos de Uso
+
+### Criar um livro
+
+```http
+POST /api/books
+Authorization: Bearer seu_token
+Content-Type: application/json
+
+{
+  "title": "Clean Code",
+  "author": "Robert C. Martin",
+  "isbn": "9780132350884",
+  "publisher": "Prentice Hall",
+  "publishedYear": 2008,
+  "pages": 464,
+  "language": "en",
+  "description": "A handbook of agile software craftsmanship"
+}
+```
+
+### Listar livros com filtros
+
+```http
+GET /api/books?status=reading&page=1&limit=10
+Authorization: Bearer seu_token
+```
+
+### Buscar por título
+
+```http
+GET /api/books?title=clean
+Authorization: Bearer seu_token
+```
+
+### Atualizar status de leitura
+
+```http
+PATCH /api/books/:id/status
+Authorization: Bearer seu_token
+Content-Type: application/json
+
+{
+  "status": "reading"
+}
+```
 
 ## 🧪 Testes
+
+Execute os testes:
+
 ```bash
-# Rodar todos os testes
+# Todos os testes
 npm test
 
-# Rodar testes em modo watch
+# Com watch mode
 npm run test:watch
 
-# Gerar relatório de cobertura
+# Com coverage
 npm test -- --coverage
 ```
 
-## 🐳 Comandos Docker Úteis
-```bash
-# Subir containers
-docker compose up -d
+**Resultados:**
+- ✅ 123/125 testes passando (98.4%)
+- ✅ 93.13% de cobertura de código
 
-# Ver logs em tempo real
-docker compose logs -f
+## 🏗️ Estrutura do Projeto
 
-# Parar containers
-docker compose down
-
-# Reconstruir containers
-docker compose up --build
-
-# Acessar banco de dados
-docker exec -it bookshelf-db psql -U admin -d bookshelf
-
-# Limpar tudo (cuidado: apaga dados)
-docker compose down -v
-```
-
-## 📁 Estrutura do Projeto
 ```
 bookshelf-api/
 ├── src/
-│   ├── config/          # Configurações (DB, Swagger)
-│   ├── controllers/     # Controladores
-│   ├── middlewares/     # Middlewares (auth, errors)
-│   ├── models/          # Modelos TypeORM
-│   ├── routes/          # Rotas da API
-│   ├── services/        # Lógica de negócio
-│   ├── types/           # TypeScript types/interfaces
-│   ├── app.ts           # Configuração Express
+│   ├── config/          # Configurações (DB, Swagger, Env)
+│   ├── middlewares/     # Middlewares (Auth)
+│   ├── models/          # Entidades TypeORM (User, Book)
+│   ├── modules/         # Módulos da aplicação
+│   │   ├── auth/        # Autenticação (controller, service, routes)
+│   │   ├── books/       # Livros (controller, service, routes)
+│   │   └── stats/       # Estatísticas (controller, service, routes)
+│   ├── types/           # Tipos TypeScript
+│   ├── app.ts           # Configuração do Express
+│   ├── routes.ts        # Rotas principais
 │   └── server.ts        # Entry point
 ├── tests/               # Testes automatizados
-├── scripts/             # Scripts SQL
-├── docker-compose.yml   # Configuração Docker
-├── Dockerfile           # Imagem Docker
-└── package.json         # Dependências
+├── .env.example         # Exemplo de variáveis de ambiente
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-## 🔐 Variáveis de Ambiente
+## 🔒 Segurança
 
-Crie um arquivo `.env` baseado no `.env.example`:
+### Implementado
+
+- ✅ **Hash de Senhas** - bcrypt com 10 rounds
+- ✅ **JWT** - Tokens com expiração de 7 dias
+- ✅ **CORS Configurado** - Apenas origens permitidas
+- ✅ **Helmet** - Headers HTTP seguros
+- ✅ **Rate Limiting** - Proteção contra brute force
+- ✅ **SQL Injection** - Prevenido pelo TypeORM
+- ✅ **Validação de Input** - Campos obrigatórios validados
+- ✅ **Isolamento de Dados** - Usuários isolados por userId
+
+### Recomendações para Produção
+
+- [ ] Use HTTPS em produção
+- [ ] Configure variáveis de ambiente seguras
+- [ ] Implemente refresh tokens
+- [ ] Adicione logging estruturado (Winston)
+- [ ] Configure backup do banco de dados
+- [ ] Use serviços de monitoramento (Sentry, DataDog)
+
+## 🚀 Deploy
+
+### Variáveis de Ambiente Necessárias
+
 ```env
-# Server
+NODE_ENV=production
 PORT=3000
-NODE_ENV=development
-
-# Database
-DB_HOST=db
+CORS_ORIGIN=https://seu-dominio.com
+DB_HOST=seu-db-host
 DB_PORT=5432
+DB_USER=seu-usuario
+DB_PASSWORD=senha-segura
 DB_NAME=bookshelf
-DB_USER=admin
-DB_PASSWORD=admin123
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-JWT_EXPIRES_IN=7d
-
-# API
-API_PREFIX=/api
+JWT_SECRET=chave-super-secreta-minimo-32-caracteres
 ```
 
-## 🎨 Features
+### Comandos
 
-- ✅ **CRUD Completo** de livros
-- ✅ **Autenticação JWT** segura
-- ✅ **Validações** de dados
-- ✅ **Regras de negócio** (status automático, datas, ISBN único)
-- ✅ **Filtros e paginação** na listagem
-- ✅ **Estatísticas** de leitura
-- ✅ **Documentação Swagger** interativa
-- ✅ **Containerização** Docker
-- ✅ **TypeScript** com tipagem forte
-- 🔄 **Testes automatizados** (em desenvolvimento)
-- 🔄 **CI/CD** (em desenvolvimento)
-
-## 🐛 Troubleshooting
-
-### Porta 3000 já está em uso
 ```bash
-# Windows
-netstat -ano | findstr :3000
-taskkill /PID <PID> /F
+# Build
+npm run build
 
-# Linux/Mac
-lsof -i :3000
-kill -9 <PID>
+# Start
+npm start
 ```
 
-### Containers não sobem
-```bash
-# Ver logs detalhados
-docker compose logs
-
-# Reconstruir do zero
-docker compose down -v
-docker compose up --build
-```
-
-## 📝 Roadmap
-
-- [ ] Testes automatizados completos (Jest + Supertest)
-- [ ] CI/CD com GitHub Actions
-- [ ] Relatórios Allure
-- [ ] Testes de performance (K6)
-- [ ] Análise de código (SonarQube)
-- [ ] Frontend React (futuro)
-
-## 👤 Autor
-
-**Seu Nome**
-- QA Engineer com 8+ anos de experiência
-- LinkedIn: [seu-linkedin](https://linkedin.com/in/seu-perfil)
-- Email: seu@email.com
-
-## 📄 Licença
+## 📝 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 🙏 Agradecimentos
+## 👨‍💻 Autor
 
-Projeto desenvolvido como portfólio de QA Automation para demonstrar habilidades em:
-- Desenvolvimento de APIs
-- Testes automatizados
-- DevOps e CI/CD
-- Boas práticas de engenharia de software
+**Seu Nome**
+- GitHub: [@seu-usuario](https://github.com/seu-usuario)
+- LinkedIn: [Seu Nome](https://linkedin.com/in/seu-perfil)
+- Portfolio: [seu-site.com](https://seu-site.com)
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues e pull requests.
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📞 Suporte
+
+Se você tiver alguma dúvida ou problema, abra uma [issue](https://github.com/seu-usuario/bookshelf-api/issues).
+
+---
+
+⭐ Se este projeto te ajudou, considere dar uma estrela!

@@ -1,14 +1,41 @@
 import { Router } from 'express';
-import { AuthController } from '../controllers/authController';
+import rateLimit from 'express-rate-limit';
+import { authController } from './authController';
 
 const router = Router();
-const authController = new AuthController();
+
+// Rate limiter para rotas de autenticação
+// Previne brute force attacks
+// DESABILITADO em ambiente de testes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // 5 tentativas por IP
+  message: {
+    error: 'Muitas tentativas de login. Tente novamente mais tarde.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test', // ← Desabilita em testes
+});
+
+// Rate limiter mais permissivo para registro
+// DESABILITADO em ambiente de testes
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 3, // 3 registros por IP por hora
+  message: {
+    error: 'Muitos registros. Tente novamente mais tarde.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test', // ← Desabilita em testes
+});
 
 /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Criar nova conta
+ *     summary: Registrar novo usuário
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -23,33 +50,23 @@ const authController = new AuthController();
  *             properties:
  *               name:
  *                 type: string
- *                 example: João Silva
  *               email:
  *                 type: string
- *                 example: joao@email.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: senha123
+ *                 minLength: 6
  *     responses:
  *       201:
  *         description: Usuário criado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *                 token:
- *                   type: string
  *       400:
  *         description: Dados inválidos
  *       409:
  *         description: Email já cadastrado
+ *       429:
+ *         description: Muitas tentativas (apenas em produção)
  */
-router.post('/register', (req, res) => authController.register(req, res));
+router.post('/register', registerLimiter, authController.register);
 
 /**
  * @swagger
@@ -69,27 +86,17 @@ router.post('/register', (req, res) => authController.register(req, res));
  *             properties:
  *               email:
  *                 type: string
- *                 example: joao@email.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: senha123
  *     responses:
  *       200:
  *         description: Login realizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *                 token:
- *                   type: string
  *       401:
  *         description: Credenciais inválidas
+ *       429:
+ *         description: Muitas tentativas (apenas em produção)
  */
-router.post('/login', (req, res) => authController.login(req, res));
+router.post('/login', authLimiter, authController.login);
 
 export default router;
