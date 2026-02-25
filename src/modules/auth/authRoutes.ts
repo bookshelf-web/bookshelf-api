@@ -6,7 +6,7 @@ const router = Router();
 
 // Rate limiter para rotas de autenticação
 // Previne brute force attacks
-// DESABILITADO em ambiente de testes
+// DESABILITADO em ambiente de desenvolvimento e testes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // 5 tentativas por IP
@@ -15,11 +15,11 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test', // ← Desabilita em testes
+  skip: () => process.env.NODE_ENV !== 'production', // ✅ Desabilita exceto em produção
 });
 
 // Rate limiter mais permissivo para registro
-// DESABILITADO em ambiente de testes
+// DESABILITADO em ambiente de desenvolvimento e testes
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3, // 3 registros por IP por hora
@@ -28,7 +28,7 @@ const registerLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test', // ← Desabilita em testes
+  skip: () => process.env.NODE_ENV !== 'production', // ✅ Desabilita exceto em produção
 });
 
 /**

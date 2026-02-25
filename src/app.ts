@@ -9,8 +9,13 @@ const app = express();
 // Segurança - Headers HTTP seguros
 app.use(helmet());
 
-// CORS configurado - permitir apenas origens específicas
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+// CORS configurado - permitir origens específicas
+// Em CI/Docker o frontend roda em http://frontend:5173 e o Chromium acessa via esse hostname
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://frontend:5173',
+];
 
 app.use(cors({
   origin: (origin, callback) => {

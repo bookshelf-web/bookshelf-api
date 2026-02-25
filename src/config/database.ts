@@ -9,7 +9,9 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'admin',
   password: process.env.DB_PASSWORD || 'admin123',
   database: process.env.DB_NAME || 'bookshelf',
-  synchronize: false,
+  // Em ambiente de teste o banco sempre começa vazio (tmpfs no CI),
+  // então synchronize garante que as tabelas são criadas mesmo sem migrations
+  synchronize: process.env.NODE_ENV === 'test',
   logging: process.env.NODE_ENV === 'development',
   entities: [User, Book],
   migrations: [],
