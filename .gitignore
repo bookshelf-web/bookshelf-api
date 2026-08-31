@@ -33,7 +33,6 @@ coverage/
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 
 # OS
 Thumbs.db
