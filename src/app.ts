@@ -6,6 +6,10 @@ import setupSwagger from './config/swagger';
 
 const app = express();
 
+// Render (e a maioria dos PaaS) serve a app atrás de um proxy reverso.
+// Sem isto o express-rate-limit rejeita o X-Forwarded-For e responde 500.
+app.set('trust proxy', 1);
+
 // Segurança - Headers HTTP seguros
 app.use(helmet());
 
