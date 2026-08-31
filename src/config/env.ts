@@ -3,14 +3,10 @@ import dotenv from 'dotenv';
 // Carregar variáveis de ambiente
 dotenv.config();
 
-// Variáveis obrigatórias
-const requiredEnvVars = [
-  'JWT_SECRET',
-  'DB_HOST',
-  'DB_USER',
-  'DB_PASSWORD',
-  'DB_NAME',
-];
+// Variáveis obrigatórias — DATABASE_URL (hospedado, ex: Supabase) substitui as DB_* individuais
+const requiredEnvVars = process.env.DATABASE_URL
+  ? ['JWT_SECRET']
+  : ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 
 // Validar variáveis obrigatórias
 export function validateEnv(): void {
