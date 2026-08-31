@@ -1,6 +1,19 @@
+import path from 'path';
 import { Express } from 'express';
+import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
+
+// Em produção o Render expõe a URL pública em RENDER_EXTERNAL_URL
+const servers = [
+  ...(process.env.RENDER_EXTERNAL_URL
+    ? [{ url: process.env.RENDER_EXTERNAL_URL, description: 'Produção' }]
+    : []),
+  {
+    url: `http://localhost:${process.env.PORT || 3000}`,
+    description: 'Servidor de Desenvolvimento',
+  },
+];
 
 const swaggerOptions: swaggerJSDoc.Options = {
   definition: {
@@ -10,12 +23,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
       version: '1.0.0',
       description: 'API para gerenciamento de biblioteca pessoal',
     },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Servidor de Desenvolvimento',
-      },
-    ],
+    servers,
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -274,15 +282,30 @@ const swaggerOptions: swaggerJSDoc.Options = {
    * Aqui é onde o Swagger encontra TODAS as rotas
    */
   apis: [
-    './src/modules/**/*.ts',
-    './src/routes.ts',
+    // __dirname aponta para src/config (dev) ou dist/config (produção);
+    // o glob {ts,js} cobre os dois casos
+    path.join(__dirname, '../modules/**/*.{ts,js}'),
+    path.join(__dirname, '../routes.{ts,js}'),
   ],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 function setupSwagger(app: Express) {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // O helmet() global aplica uma CSP que bloqueia os scripts inline do
+  // Swagger UI; nesta rota afrouxamos apenas o necessário para a página renderizar
+  const swaggerCsp = helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'script-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'img-src': ["'self'", 'data:', 'https:'],
+      },
+    },
+  });
+
+  app.use('/api-docs', swaggerCsp, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
 export default setupSwagger;
