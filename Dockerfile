@@ -1,16 +1,16 @@
 # ---- Build stage ----
 FROM node:18-alpine AS build
 
-# Dependências de sistema para eventuais módulos nativos durante o build
+# System deps for any native modules built during install
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-# Instalar dependências (incl. devDependencies) de forma reprodutível
+# Reproducible install, including devDependencies (needed to compile)
 COPY package*.json ./
 RUN npm ci
 
-# Copiar código fonte e compilar TypeScript -> JavaScript (dist/)
+# Compile TypeScript -> JavaScript (dist/)
 COPY . .
 RUN npm run build
 
@@ -21,14 +21,14 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Somente dependências de produção
+# Production dependencies only
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copiar apenas os artefatos já compilados
+# Copy the compiled output only
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
 
-# Produção: roda o JS compilado com node puro — NUNCA watch mode
+# Run the compiled JS with plain node - never watch mode
 CMD ["node", "dist/server.js"]

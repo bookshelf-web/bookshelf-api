@@ -1,7 +1,7 @@
--- Extensão para UUID
+-- UUID support
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Tabela de usuários
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de livros
+-- Books table
 CREATE TABLE IF NOT EXISTS books (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -33,13 +33,13 @@ CREATE TABLE IF NOT EXISTS books (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices para melhorar performance
+-- Indexes for query performance
 CREATE INDEX idx_books_user_id ON books(user_id);
 CREATE INDEX idx_books_status ON books(status);
 CREATE INDEX idx_books_title ON books(title);
 CREATE INDEX idx_books_author ON books(author);
 
--- Trigger para atualizar updated_at automaticamente
+-- Keep updated_at current on every row update
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN

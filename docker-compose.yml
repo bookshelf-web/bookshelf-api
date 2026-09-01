@@ -35,7 +35,6 @@ services:
       DB_PASSWORD: admin123
       JWT_SECRET: your-super-secret-jwt-key
       PORT: 3000
-      API_PREFIX: /api
     depends_on:
       db:
         condition: service_healthy
