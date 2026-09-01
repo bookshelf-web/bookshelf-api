@@ -15,15 +15,11 @@ export class ApiClient {
 
   // Auth endpoints
   async register(data: any) {
-    return request(app)
-      .post(`${this.baseURL}/auth/register`)
-      .send(data);
+    return request(app).post(`${this.baseURL}/auth/register`).send(data);
   }
 
   async login(data: any) {
-    return request(app)
-      .post(`${this.baseURL}/auth/login`)
-      .send(data);
+    return request(app).post(`${this.baseURL}/auth/login`).send(data);
   }
 
   // Books endpoints
@@ -49,9 +45,7 @@ export class ApiClient {
   }
 
   async updateBookStatus(id: string, status: string) {
-    const req = request(app)
-      .patch(`${this.baseURL}/books/${id}/status`)
-      .send({ status });
+    const req = request(app).patch(`${this.baseURL}/books/${id}/status`).send({ status });
     return this.token ? req.set('Authorization', `Bearer ${this.token}`) : req;
   }
 

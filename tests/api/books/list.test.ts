@@ -1,7 +1,11 @@
 import { ApiClient } from '../../helpers/apiClient';
 import { AuthHelper } from '../../helpers/authHelper';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
+import {
+  setupTestDatabase,
+  cleanupTestDatabase,
+  closeTestDatabase,
+} from '../../setup/testDatabase';
 
 describe('GET /api/books', () => {
   let apiClient: ApiClient;
@@ -21,11 +25,11 @@ describe('GET /api/books', () => {
     await closeTestDatabase();
   });
 
-  describe('Cenários de Sucesso', () => {
-    it('deve listar todos os livros do usuário', async () => {
+  describe('success', () => {
+    it('lists all of the books owned by the user', async () => {
       await authHelper.getAuthenticatedClient();
 
-      // Criar alguns livros
+      // create a few books
       const book1 = TestDataBuilder.createBook({ title: 'Book 1' });
       const book2 = TestDataBuilder.createBook({ title: 'Book 2' });
       const book3 = TestDataBuilder.createBook({ title: 'Book 3' });
@@ -43,7 +47,7 @@ describe('GET /api/books', () => {
       expect(response.body.pagination.total).toBe(3);
     });
 
-    it('deve retornar lista vazia quando usuário não tem livros', async () => {
+    it('returns an empty list when the user has no books', async () => {
       await authHelper.getAuthenticatedClient();
 
       const response = await apiClient.getBooks();
@@ -53,42 +57,37 @@ describe('GET /api/books', () => {
       expect(response.body.pagination.total).toBe(0);
     });
 
-    it('deve retornar apenas livros do usuário autenticado', async () => {
-      // Garantir limpeza total antes deste teste
+    it('returns only the authenticated user’s books', async () => {
       await cleanupTestDatabase();
-      
-      // Usuário 1 cria 2 livros
-      const client1 = await authHelper.getAuthenticatedClient();
+
+      // Independent clients: AuthHelper mutates the token on the client it wraps.
+      const client1 = new ApiClient();
+      await new AuthHelper(client1).getAuthenticatedClient();
       await client1.createBook(TestDataBuilder.createBook());
       await client1.createBook(TestDataBuilder.createBook());
-    
-      // Usuário 2 cria 3 livros
-      const client2 = await authHelper.getAuthenticatedClient(TestDataBuilder.createUser());
+
+      const client2 = new ApiClient();
+      await new AuthHelper(client2).getAuthenticatedClient(TestDataBuilder.createUser());
       await client2.createBook(TestDataBuilder.createBook());
       await client2.createBook(TestDataBuilder.createBook());
       await client2.createBook(TestDataBuilder.createBook());
-    
-      // Usuário 1 deve ver apenas seus 2 livros
-      const response1 = await client1.getBooks();
-      expect(response1.body.books).toHaveLength(2);
-    
-      // Usuário 2 deve ver apenas seus 3 livros
-      const response2 = await client2.getBooks();
-      expect(response2.body.books).toHaveLength(3);
+
+      expect((await client1.getBooks()).body.books).toHaveLength(2);
+      expect((await client2.getBooks()).body.books).toHaveLength(3);
     });
   });
 
-  describe('Cenários de Paginação', () => {
+  describe('pagination', () => {
     beforeEach(async () => {
       await authHelper.getAuthenticatedClient();
 
-      // Criar 15 livros
+      // create 15 books
       for (let i = 1; i <= 15; i++) {
         await apiClient.createBook(TestDataBuilder.createBook({ title: `Book ${i}` }));
       }
     });
 
-    it('deve retornar 10 livros por padrão (página 1)', async () => {
+    it('returns 10 books per page by default', async () => {
       const response = await apiClient.getBooks();
 
       expect(response.status).toBe(200);
@@ -99,7 +98,7 @@ describe('GET /api/books', () => {
       expect(response.body.pagination.totalPages).toBe(2);
     });
 
-    it('deve retornar livros da página 2', async () => {
+    it('returns the second page', async () => {
       const response = await apiClient.getBooks({ page: 2 });
 
       expect(response.status).toBe(200);
@@ -107,7 +106,7 @@ describe('GET /api/books', () => {
       expect(response.body.pagination.page).toBe(2);
     });
 
-    it('deve respeitar limite customizado', async () => {
+    it('respects a custom limit', async () => {
       const response = await apiClient.getBooks({ limit: 5 });
 
       expect(response.status).toBe(200);
@@ -116,7 +115,7 @@ describe('GET /api/books', () => {
       expect(response.body.pagination.totalPages).toBe(3);
     });
 
-    it('deve combinar página e limite', async () => {
+    it('combines page and limit', async () => {
       const response = await apiClient.getBooks({ page: 2, limit: 5 });
 
       expect(response.status).toBe(200);
@@ -126,22 +125,26 @@ describe('GET /api/books', () => {
     });
   });
 
-  describe('Cenários de Filtros', () => {
+  describe('filtering', () => {
     beforeEach(async () => {
       await authHelper.getAuthenticatedClient();
 
-      // Criar livros com diferentes status
+      // books with different statuses
       await apiClient.createBook(TestDataBuilder.createBook({ title: 'To Read Book' }));
-      
-      const readingBook = await apiClient.createBook(TestDataBuilder.createBook({ title: 'Reading Book' }));
+
+      const readingBook = await apiClient.createBook(
+        TestDataBuilder.createBook({ title: 'Reading Book' }),
+      );
       await apiClient.updateBookStatus(readingBook.body.book.id, 'reading');
 
-      const readBook = await apiClient.createBook(TestDataBuilder.createBook({ title: 'Read Book' }));
+      const readBook = await apiClient.createBook(
+        TestDataBuilder.createBook({ title: 'Read Book' }),
+      );
       await apiClient.updateBookStatus(readBook.body.book.id, 'read');
       await apiClient.updateBook(readBook.body.book.id, { rating: 5 });
     });
 
-    it('deve filtrar por status "to_read"', async () => {
+    it('filters by status to_read', async () => {
       const response = await apiClient.getBooks({ status: 'to_read' });
 
       expect(response.status).toBe(200);
@@ -149,7 +152,7 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].status).toBe('to_read');
     });
 
-    it('deve filtrar por status "reading"', async () => {
+    it('filters by status reading', async () => {
       const response = await apiClient.getBooks({ status: 'reading' });
 
       expect(response.status).toBe(200);
@@ -157,7 +160,7 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].status).toBe('reading');
     });
 
-    it('deve filtrar por status "read"', async () => {
+    it('filters by status read', async () => {
       const response = await apiClient.getBooks({ status: 'read' });
 
       expect(response.status).toBe(200);
@@ -165,7 +168,7 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].status).toBe('read');
     });
 
-    it('deve filtrar por rating', async () => {
+    it('filters by rating', async () => {
       const response = await apiClient.getBooks({ rating: 5 });
 
       expect(response.status).toBe(200);
@@ -173,7 +176,7 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].rating).toBe(5);
     });
 
-    it('deve buscar por título (case-insensitive)', async () => {
+    it('searches by title (case-insensitive)', async () => {
       const response = await apiClient.getBooks({ title: 'reading' });
 
       expect(response.status).toBe(200);
@@ -181,7 +184,7 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].title).toContain('Reading');
     });
 
-    it('deve buscar por autor (case-insensitive)', async () => {
+    it('searches by author (case-insensitive)', async () => {
       await apiClient.createBook(TestDataBuilder.createBook({ author: 'Robert Martin' }));
 
       const response = await apiClient.getBooks({ author: 'martin' });
@@ -191,10 +194,10 @@ describe('GET /api/books', () => {
       expect(response.body.books[0].author).toMatch(/martin/i);
     });
 
-    it('deve combinar múltiplos filtros', async () => {
-      const response = await apiClient.getBooks({ 
+    it('combines multiple filters', async () => {
+      const response = await apiClient.getBooks({
         status: 'read',
-        rating: 5
+        rating: 5,
       });
 
       expect(response.status).toBe(200);
@@ -204,7 +207,7 @@ describe('GET /api/books', () => {
     });
   });
 
-  describe('Cenários de Ordenação', () => {
+  describe('sorting', () => {
     beforeEach(async () => {
       await authHelper.getAuthenticatedClient();
 
@@ -213,10 +216,10 @@ describe('GET /api/books', () => {
       await apiClient.createBook(TestDataBuilder.createBook({ title: 'Beta Book' }));
     });
 
-    it('deve ordenar por título crescente (ASC)', async () => {
-      const response = await apiClient.getBooks({ 
+    it('sorts by title ascending', async () => {
+      const response = await apiClient.getBooks({
         sortBy: 'title',
-        sortOrder: 'ASC'
+        sortOrder: 'ASC',
       });
 
       expect(response.status).toBe(200);
@@ -225,10 +228,10 @@ describe('GET /api/books', () => {
       expect(response.body.books[2].title).toBe('Zebra Book');
     });
 
-    it('deve ordenar por título decrescente (DESC)', async () => {
-      const response = await apiClient.getBooks({ 
+    it('sorts by title descending', async () => {
+      const response = await apiClient.getBooks({
         sortBy: 'title',
-        sortOrder: 'DESC'
+        sortOrder: 'DESC',
       });
 
       expect(response.status).toBe(200);
@@ -237,29 +240,29 @@ describe('GET /api/books', () => {
       expect(response.body.books[2].title).toBe('Alpha Book');
     });
 
-    it('deve ordenar por data de criação por padrão (mais recentes primeiro)', async () => {
+    it('sorts by creation date by default (newest first)', async () => {
       const response = await apiClient.getBooks();
 
       expect(response.status).toBe(200);
       const dates = response.body.books.map((b: any) => new Date(b.createdAt).getTime());
-      
-      // Verificar que está ordenado do mais recente para o mais antigo
+
+      // newest first
       for (let i = 0; i < dates.length - 1; i++) {
         expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1]);
       }
     });
   });
 
-  describe('Cenários de Autorização', () => {
-    it('deve retornar erro 401 quando não enviar token', async () => {
+  describe('authorization', () => {
+    it('returns 401 without a token', async () => {
       const response = await apiClient.getBooks();
 
       expect(response.status).toBe(401);
       expect(response.body).toHaveProperty('error');
     });
 
-    it('deve retornar erro 401 quando enviar token inválido', async () => {
-      apiClient.setToken('token-invalido');
+    it('returns 401 with an invalid token', async () => {
+      apiClient.setToken('invalid-token');
 
       const response = await apiClient.getBooks();
 

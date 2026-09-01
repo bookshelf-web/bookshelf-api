@@ -1,9 +1,13 @@
 import { ApiClient } from '../../helpers/apiClient';
 import { AuthHelper } from '../../helpers/authHelper';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
+import {
+  setupTestDatabase,
+  cleanupTestDatabase,
+  closeTestDatabase,
+} from '../../setup/testDatabase';
 
-describe('Books - Validações Adicionais', () => {
+describe('Books - additional validations', () => {
   let apiClient: ApiClient;
   let authHelper: AuthHelper;
 
@@ -22,10 +26,10 @@ describe('Books - Validações Adicionais', () => {
     await closeTestDatabase();
   });
 
-  describe('Validações de Campos de Texto', () => {
-    it('deve aceitar título com caracteres especiais', async () => {
+  describe('text fields', () => {
+    it('accepts a title with special characters', async () => {
       const bookData = TestDataBuilder.createBook({
-        title: 'C++ Programming: The Complete Guide!!! @2024'
+        title: 'C++ Programming: The Complete Guide!!! @2024',
       });
 
       const response = await apiClient.createBook(bookData);
@@ -36,9 +40,9 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.title).toContain('@');
     });
 
-    it('deve aceitar autor com caracteres acentuados', async () => {
+    it('accepts an author with accented characters', async () => {
       const bookData = TestDataBuilder.createBook({
-        author: 'José María González Sánchez'
+        author: 'José María González Sánchez',
       });
 
       const response = await apiClient.createBook(bookData);
@@ -47,10 +51,10 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.author).toBe('José María González Sánchez');
     });
 
-    it('deve aceitar descrição longa', async () => {
+    it('accepts a long description', async () => {
       const longDescription = 'A'.repeat(1000);
       const bookData = TestDataBuilder.createBook({
-        description: longDescription
+        description: longDescription,
       });
 
       const response = await apiClient.createBook(bookData);
@@ -59,11 +63,11 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.description).toBe(longDescription);
     });
 
-    it('deve aceitar notas longas', async () => {
+    it('accepts long notes', async () => {
       const createResponse = await apiClient.createBook(TestDataBuilder.createBook());
       const bookId = createResponse.body.book.id;
 
-      const longNotes = 'Nota muito longa. '.repeat(100);
+      const longNotes = 'A very long note. '.repeat(100);
       const response = await apiClient.updateBook(bookId, { notes: longNotes });
 
       expect(response.status).toBe(200);
@@ -71,8 +75,8 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Validações de Números', () => {
-    it('deve aceitar páginas = 0', async () => {
+  describe('numeric fields', () => {
+    it('accepts pages = 0', async () => {
       const bookData = TestDataBuilder.createBook({ pages: 0 });
 
       const response = await apiClient.createBook(bookData);
@@ -81,7 +85,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.pages).toBe(0);
     });
 
-    it('deve aceitar páginas com número muito grande', async () => {
+    it('accepts a very large page count', async () => {
       const bookData = TestDataBuilder.createBook({ pages: 99999 });
 
       const response = await apiClient.createBook(bookData);
@@ -90,7 +94,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.pages).toBe(99999);
     });
 
-    it('deve aceitar ano de publicação muito antigo', async () => {
+    it('accepts a very old published year', async () => {
       const bookData = TestDataBuilder.createBook({ publishedYear: 1000 });
 
       const response = await apiClient.createBook(bookData);
@@ -99,7 +103,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.publishedYear).toBe(1000);
     });
 
-    it('deve aceitar ano de publicação do ano atual', async () => {
+    it('accepts the current year as published year', async () => {
       const currentYear = new Date().getFullYear();
       const bookData = TestDataBuilder.createBook({ publishedYear: currentYear });
 
@@ -110,8 +114,8 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Validações de ISBN', () => {
-    it('deve aceitar ISBN-10 válido', async () => {
+  describe('ISBN', () => {
+    it('accepts a valid ISBN-10', async () => {
       const bookData = TestDataBuilder.createBook({ isbn: '0132350882' });
 
       const response = await apiClient.createBook(bookData);
@@ -120,7 +124,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.isbn).toBe('0132350882');
     });
 
-    it('deve aceitar ISBN-13 válido', async () => {
+    it('accepts a valid ISBN-13', async () => {
       const bookData = TestDataBuilder.createBook({ isbn: '9780132350884' });
 
       const response = await apiClient.createBook(bookData);
@@ -130,8 +134,8 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Validações de Rating', () => {
-    it('deve aceitar rating = 1', async () => {
+  describe('rating', () => {
+    it('accepts rating = 1', async () => {
       const createResponse = await apiClient.createBook(TestDataBuilder.createBook());
       const response = await apiClient.updateBook(createResponse.body.book.id, { rating: 1 });
 
@@ -139,7 +143,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.rating).toBe(1);
     });
 
-    it('deve aceitar rating = 5', async () => {
+    it('accepts rating = 5', async () => {
       const createResponse = await apiClient.createBook(TestDataBuilder.createBook());
       const response = await apiClient.updateBook(createResponse.body.book.id, { rating: 5 });
 
@@ -147,7 +151,7 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.rating).toBe(5);
     });
 
-    it('deve aceitar rating = 3', async () => {
+    it('accepts rating = 3', async () => {
       const createResponse = await apiClient.createBook(TestDataBuilder.createBook());
       const response = await apiClient.updateBook(createResponse.body.book.id, { rating: 3 });
 
@@ -156,8 +160,8 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Validações de Idioma', () => {
-    it('deve aceitar diferentes códigos de idioma', async () => {
+  describe('language', () => {
+    it('accepts different language codes', async () => {
       const languages = ['pt-BR', 'en-US', 'es-ES', 'fr-FR', 'de-DE'];
 
       for (const lang of languages) {
@@ -170,10 +174,10 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Validações de URL', () => {
-    it('deve aceitar URL de capa válida', async () => {
+  describe('URL', () => {
+    it('accepts a valid cover URL', async () => {
       const bookData = TestDataBuilder.createBook({
-        coverUrl: 'https://example.com/covers/book-cover.jpg'
+        coverUrl: 'https://example.com/covers/book-cover.jpg',
       });
 
       const response = await apiClient.createBook(bookData);
@@ -182,9 +186,9 @@ describe('Books - Validações Adicionais', () => {
       expect(response.body.book.coverUrl).toBe('https://example.com/covers/book-cover.jpg');
     });
 
-    it('deve aceitar URL com parâmetros', async () => {
+    it('accepts a URL with query parameters', async () => {
       const bookData = TestDataBuilder.createBook({
-        coverUrl: 'https://cdn.example.com/image?id=123&size=large&format=jpg'
+        coverUrl: 'https://cdn.example.com/image?id=123&size=large&format=jpg',
       });
 
       const response = await apiClient.createBook(bookData);
@@ -194,20 +198,20 @@ describe('Books - Validações Adicionais', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('deve lidar com request vazio', async () => {
+  describe('edge cases', () => {
+    it('handles an empty request body', async () => {
       const response = await apiClient.createBook({});
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
 
-    it('deve lidar com campos null', async () => {
+    it('handles null fields', async () => {
       const bookData = {
         title: 'Test Book',
         author: 'Test Author',
         pages: null,
-        publishedYear: null
+        publishedYear: null,
       };
 
       const response = await apiClient.createBook(bookData);

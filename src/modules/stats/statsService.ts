@@ -1,47 +1,44 @@
 import { AppDataSource } from '../../config/database';
 import { Book } from '../../models/Book';
+import { BookStatus } from '../../types/books';
+
+interface Overview {
+  total: number;
+  byStatus: { toRead: number; reading: number; read: number };
+  averageRating: number;
+  totalPages: number;
+  booksWithRating: number;
+}
 
 export class StatsService {
-  static async overview(userId?: string) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
-    }
-
-    const bookRepository = AppDataSource.getRepository(Book);
-
-    // Buscar todos os livros do usuário
-    const books = await bookRepository.find({
+  static async overview(userId: string): Promise<Overview> {
+    const books = await AppDataSource.getRepository(Book).find({
       where: { userId },
+      select: ['status', 'rating', 'pages'],
     });
 
-    const total = books.length;
+    const ratings = books
+      .map(book => book.rating)
+      .filter((value): value is number => typeof value === 'number');
 
-    // Contar por status
-    const byStatus = {
-      toRead: books.filter(b => b.status === 'to_read').length,
-      reading: books.filter(b => b.status === 'reading').length,
-      read: books.filter(b => b.status === 'read').length,
-    };
-
-    // Calcular média de rating (apenas livros com rating)
-    const booksWithRating = books.filter(b => b.rating !== null && b.rating !== undefined);
-    const averageRating = booksWithRating.length > 0
-      ? booksWithRating.reduce((sum, b) => sum + (b.rating || 0), 0) / booksWithRating.length
-      : 0;
-
-    // Somar total de páginas (apenas livros com páginas)
-    const totalPages = books
-      .filter(b => b.pages !== null && b.pages !== undefined)
-      .reduce((sum, b) => sum + (b.pages || 0), 0);
+    const totalPages = books.reduce((sum, book) => sum + (book.pages ?? 0), 0);
 
     return {
-      stats: {
-        total,
-        byStatus,
-        averageRating,
-        totalPages,
-        booksWithRating: booksWithRating.length,
+      total: books.length,
+      byStatus: {
+        toRead: countByStatus(books, BookStatus.TO_READ),
+        reading: countByStatus(books, BookStatus.READING),
+        read: countByStatus(books, BookStatus.READ),
       },
+      averageRating: ratings.length
+        ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length
+        : 0,
+      totalPages,
+      booksWithRating: ratings.length,
     };
   }
+}
+
+function countByStatus(books: Book[], status: BookStatus): number {
+  return books.filter(book => book.status === status).length;
 }

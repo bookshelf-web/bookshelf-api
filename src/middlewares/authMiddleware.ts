@@ -1,41 +1,20 @@
-import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { AuthRequest } from '../types/auth';
-import { getJWTSecret } from '../config/env';
+import { NextFunction, Request, Response } from 'express';
+import { UnauthorizedError } from '../shared/errors';
+import { verifyAuthToken } from '../shared/jwt';
 
-export const authMiddleware = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Response | void => {
+export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({
-      error: 'Token não informado',
-    });
+    throw new UnauthorizedError('Authentication token not provided', 'TOKEN_MISSING');
   }
 
-  const parts = authHeader.split(' ');
+  const [scheme, token] = authHeader.split(' ');
 
-  if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    return res.status(401).json({
-      error: 'Token mal formatado',
-    });
+  if (scheme !== 'Bearer' || !token) {
+    throw new UnauthorizedError('Malformed authentication token', 'TOKEN_MALFORMED');
   }
 
-  const token = parts[1];
-
-  try {
-    const JWT_SECRET = getJWTSecret();
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-
-    req.userId = decoded.userId;
-
-    return next();
-  } catch (error) {
-    return res.status(401).json({
-      error: 'Token inválido',
-    });
-  }
+  req.userId = verifyAuthToken(token).userId;
+  next();
 };

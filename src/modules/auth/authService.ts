@@ -1,126 +1,70 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../../config/database';
 import { User } from '../../models/User';
-import { getJWTSecret } from '../../config/env';
+import { ConflictError, UnauthorizedError } from '../../shared/errors';
+import { signAuthToken } from '../../shared/jwt';
+import { LoginInput, RegisterInput } from './authSchemas';
 
-interface RegisterData {
+const BCRYPT_ROUNDS = 10;
+
+interface PublicUser {
+  id: string;
   name: string;
   email: string;
-  password: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface LoginData {
-  email: string;
-  password: string;
+interface AuthResult {
+  token: string;
+  user: PublicUser;
 }
 
 export class AuthService {
-  private static userRepository = AppDataSource.getRepository(User);
+  private static get repository() {
+    return AppDataSource.getRepository(User);
+  }
 
-  static async register(data: RegisterData) {
-    const { name, email, password } = data;
-
-    // Validações
-    if (!name || name.trim() === '') {
-      throw new Error('Nome é obrigatório');
+  static async register({ name, email, password }: RegisterInput): Promise<AuthResult> {
+    const existing = await this.repository.findOne({ where: { email }, select: ['id'] });
+    if (existing) {
+      throw new ConflictError('Email is already registered', 'EMAIL_ALREADY_REGISTERED');
     }
 
-    if (!email || email.trim() === '') {
-      throw new Error('Email é obrigatório');
-    }
+    const user = await this.repository.save(
+      this.repository.create({
+        name,
+        email,
+        password: await bcrypt.hash(password, BCRYPT_ROUNDS),
+      }),
+    );
 
-    if (!password || password.trim() === '') {
-      throw new Error('Senha é obrigatório');
-    }
+    return { token: signAuthToken(user.id), user: toPublicUser(user) };
+  }
 
-    if (password.length < 6) {
-      throw new Error('Senha deve ter no mínimo 6 caracteres');
-    }
-
-    // Verificar se email já existe
-    const existingUser = await this.userRepository.findOne({ where: { email } });
-    if (existingUser) {
-      const error = new Error('Email já cadastrado');
-      (error as any).statusCode = 409;
-      throw error;
-    }
-
-    // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Criar usuário
-    const user = this.userRepository.create({
-      name,
-      email,
-      password: hashedPassword,
+  static async login({ email, password }: LoginInput): Promise<AuthResult> {
+    const user = await this.repository.findOne({
+      where: { email },
+      select: ['id', 'name', 'email', 'password', 'createdAt', 'updatedAt'],
     });
 
-    const savedUser = await this.userRepository.save(user);
+    // Same error for unknown email and wrong password so the endpoint does not
+    // reveal which accounts exist.
+    const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
+    if (!user || !passwordMatches) {
+      throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
+    }
 
-    // Gerar token
-    const JWT_SECRET = getJWTSecret();
-    const token = jwt.sign(
-      { userId: savedUser.id },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Remover senha do retorno
-    const { password: _, ...userWithoutPassword } = savedUser;
-
-    return {
-      message: 'Usuário criado com sucesso',
-      token,
-      user: userWithoutPassword,
-    };
+    return { token: signAuthToken(user.id), user: toPublicUser(user) };
   }
+}
 
-  static async login(data: LoginData) {
-    const { email, password } = data;
-
-    // Validações
-    if (!email || email.trim() === '') {
-      throw new Error('Email é obrigatório');
-    }
-
-    if (!password || password.trim() === '') {
-      throw new Error('Senha é obrigatório');
-    }
-
-    // Buscar usuário
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    // SEGURANÇA: Retornar mesma mensagem para email inexistente OU senha incorreta
-    if (!user) {
-      const error = new Error('Credenciais inválidas');
-      (error as any).statusCode = 401;
-      throw error;
-    }
-
-    // Verificar senha
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      const error = new Error('Credenciais inválidas');
-      (error as any).statusCode = 401;
-      throw error;
-    }
-
-    // Gerar token
-    const JWT_SECRET = getJWTSecret();
-    const token = jwt.sign(
-      { userId: user.id },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Remover senha do retorno
-    const { password: _, ...userWithoutPassword } = user;
-
-    return {
-      message: 'Login realizado com sucesso',
-      token,
-      user: userWithoutPassword,
-    };
-  }
+function toPublicUser(user: User): PublicUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }

@@ -1,299 +1,136 @@
-import { Repository, Like } from 'typeorm';
-import { Book } from '../../models/Book';
 import { AppDataSource } from '../../config/database';
-import { CreateBookDTO, UpdateBookDTO, UpdateBookStatusDTO, BookStatus } from '../../types/books';
+import { Book } from '../../models/Book';
+import { ConflictError, NotFoundError } from '../../shared/errors';
+import { BookStatus } from '../../types/books';
+import { CreateBookInput, ListBooksQuery, SORTABLE_COLUMNS, UpdateBookInput } from './booksSchemas';
 
-interface ListOptions {
-  page?: number;
-  limit?: number;
-  status?: string;
-  rating?: number;
-  search?: string;
-  title?: string;
-  author?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 export class BooksService {
-  private static bookRepository: Repository<Book> = AppDataSource.getRepository(Book);
+  private static get repository() {
+    return AppDataSource.getRepository(Book);
+  }
 
-  static async create(data: CreateBookDTO & { userId?: string }) {
-    const { title, author, isbn, publisher, publishedYear, pages, language, description, rating, notes, coverUrl, userId } = data;
+  static async create(userId: string, data: CreateBookInput): Promise<Book> {
+    await this.assertIsbnAvailable(data.isbn);
 
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
-    }
-
-    // Validações de campos obrigatórios
-    if (!title || title.trim() === '') {
-      throw new Error('Título é obrigatório');
-    }
-
-    if (!author || author.trim() === '') {
-      throw new Error('Autor é obrigatório');
-    }
-
-    // Validação de ISBN duplicado
-    if (isbn && isbn.trim() !== '') {
-      const existingBook = await this.bookRepository.findOne({
-        where: { isbn: isbn.trim() }
-      });
-      if (existingBook) {
-        const error = new Error('ISBN já cadastrado');
-        (error as any).statusCode = 409;
-        throw error;
-      }
-    }
-
-    // Validação de ano de publicação
-    if (publishedYear && publishedYear > new Date().getFullYear()) {
-      throw new Error('Ano de publicação não pode ser no futuro');
-    }
-
-    // Validação de rating
-    if (rating !== undefined && rating !== null) {
-      if (rating < 1 || rating > 5) {
-        throw new Error('Rating deve estar entre 1 e 5');
-      }
-    }
-
-    const book = this.bookRepository.create({
-      title: title.trim(),
-      author: author.trim(),
-      isbn: isbn?.trim() || undefined,
-      publisher: publisher?.trim() || undefined,
-      publishedYear: publishedYear || undefined,
-      pages: pages !== undefined && pages !== null ? pages : undefined,
-      language: language?.trim() || undefined,
-      description: description?.trim() || undefined,
-      rating: rating || undefined,
-      notes: notes?.trim() || undefined,
-      coverUrl: coverUrl?.trim() || undefined,
+    const book = this.repository.create({
+      ...data,
       userId,
       status: BookStatus.TO_READ,
     });
 
-    const savedBook = await this.bookRepository.save(book);
-
-    return {
-      message: 'Livro criado com sucesso',
-      book: savedBook,
-    };
+    return this.repository.save(book);
   }
 
-  static async list(userId?: string, options: ListOptions = {}) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
-    }
+  static async list(userId: string, query: ListBooksQuery) {
+    const { page, limit } = query;
 
-    const page = options.page || 1;
-    const limit = options.limit || 10;
-    const skip = (page - 1) * limit;
-
-    // Construir where clause
-    const where: any = { userId };
-
-    if (options.status) {
-      where.status = options.status;
-    }
-
-    if (options.rating) {
-      where.rating = options.rating;
-    }
-
-    // Construir order clause
-    let order: any = { createdAt: 'DESC' };
-    
-    if (options.sortBy) {
-      const sortOrder = options.sortOrder || 'ASC';
-      order = { [options.sortBy]: sortOrder };
-    }
-
-    // Query base
-    let queryBuilder = this.bookRepository.createQueryBuilder('book')
+    const qb = this.repository
+      .createQueryBuilder('book')
       .where('book.userId = :userId', { userId });
 
-    // Aplicar filtros
-    if (options.status) {
-      queryBuilder = queryBuilder.andWhere('book.status = :status', { status: options.status });
-    }
+    if (query.status) qb.andWhere('book.status = :status', { status: query.status });
+    if (query.rating) qb.andWhere('book.rating = :rating', { rating: query.rating });
 
-    if (options.rating) {
-      queryBuilder = queryBuilder.andWhere('book.rating = :rating', { rating: options.rating });
-    }
-
-    if (options.search) {
-      queryBuilder = queryBuilder.andWhere(
+    if (query.search) {
+      qb.andWhere(
         '(LOWER(book.title) LIKE LOWER(:search) OR LOWER(book.author) LIKE LOWER(:search))',
-        { search: `%${options.search}%` }
+        { search: `%${query.search}%` },
       );
     }
-
-    if (options.title) {
-      queryBuilder = queryBuilder.andWhere(
-        'LOWER(book.title) LIKE LOWER(:title)',
-        { title: `%${options.title}%` }
-      );
+    if (query.title) {
+      qb.andWhere('LOWER(book.title) LIKE LOWER(:title)', { title: `%${query.title}%` });
+    }
+    if (query.author) {
+      qb.andWhere('LOWER(book.author) LIKE LOWER(:author)', { author: `%${query.author}%` });
     }
 
-    if (options.author) {
-      queryBuilder = queryBuilder.andWhere(
-        'LOWER(book.author) LIKE LOWER(:author)',
-        { author: `%${options.author}%` }
-      );
-    }
-
-    // Aplicar ordenação
-    if (options.sortBy) {
-      const sortOrder = options.sortOrder || 'ASC';
-      queryBuilder = queryBuilder.orderBy(`book.${options.sortBy}`, sortOrder);
+    if (query.sortBy && SORTABLE_COLUMNS.includes(query.sortBy)) {
+      qb.orderBy(`book.${query.sortBy}`, query.sortOrder ?? 'ASC');
     } else {
-      queryBuilder = queryBuilder.orderBy('book.createdAt', 'DESC');
+      qb.orderBy('book.createdAt', 'DESC');
     }
 
-    // Paginação
-    queryBuilder = queryBuilder.skip(skip).take(limit);
+    qb.skip((page - 1) * limit).take(limit);
 
-    const [books, total] = await queryBuilder.getManyAndCount();
+    const [books, total] = await qb.getManyAndCount();
 
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      books,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
+    const pagination: Pagination = {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
     };
+
+    return { books, pagination };
   }
 
-  static async getById(id: string, userId?: string) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
-    }
-
-    const book = await this.bookRepository.findOne({
-      where: { id, userId },
-    });
-
+  static async getById(userId: string, id: string): Promise<Book> {
+    const book = await this.repository.findOne({ where: { id, userId } });
     if (!book) {
-      const error = new Error('Livro não encontrado');
-      (error as any).statusCode = 404;
-      throw error;
+      throw new NotFoundError('Book not found', 'BOOK_NOT_FOUND');
     }
-
     return book;
   }
 
-  static async update(id: string, data: UpdateBookDTO, userId?: string) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
+  static async update(userId: string, id: string, data: UpdateBookInput): Promise<Book> {
+    const book = await this.getById(userId, id);
+
+    if (data.isbn && data.isbn.trim() !== book.isbn) {
+      await this.assertIsbnAvailable(data.isbn);
     }
 
-    const book = await this.getById(id, userId);
-
-    // Validação de ISBN duplicado se mudou
-    if (data.isbn && data.isbn.trim() !== '' && data.isbn !== book.isbn) {
-      const existingBook = await this.bookRepository.findOne({
-        where: { isbn: data.isbn.trim() }
-      });
-      if (existingBook) {
-        const error = new Error('ISBN já cadastrado');
-        (error as any).statusCode = 409;
-        throw error;
-      }
-    }
-
-    // Validação de ano de publicação
-    if (data.publishedYear && data.publishedYear > new Date().getFullYear()) {
-      throw new Error('Ano de publicação não pode ser no futuro');
-    }
-
-    // Validação de rating
-    if (data.rating !== undefined && data.rating !== null) {
-      if (data.rating < 1 || data.rating > 5) {
-        throw new Error('Rating deve estar entre 1 e 5');
-      }
-    }
-
-    // Atualizar campos - usando undefined ao invés de null
-    if (data.title !== undefined) book.title = data.title.trim();
-    if (data.author !== undefined) book.author = data.author.trim();
+    if (data.title !== undefined) book.title = data.title;
+    if (data.author !== undefined) book.author = data.author;
+    if (data.status !== undefined) book.status = data.status;
     if (data.isbn !== undefined) book.isbn = data.isbn?.trim() || undefined;
     if (data.publisher !== undefined) book.publisher = data.publisher?.trim() || undefined;
-    if (data.publishedYear !== undefined) book.publishedYear = data.publishedYear || undefined;
-    if (data.pages !== undefined) book.pages = data.pages !== null ? data.pages : undefined;
+    if (data.publishedYear !== undefined) book.publishedYear = data.publishedYear ?? undefined;
+    if (data.pages !== undefined) book.pages = data.pages ?? undefined;
     if (data.language !== undefined) book.language = data.language?.trim() || undefined;
     if (data.description !== undefined) book.description = data.description?.trim() || undefined;
-    if (data.status !== undefined) book.status = data.status;
-    if (data.rating !== undefined) book.rating = data.rating || undefined;
-    if (data.notes !== undefined) {
-      if (data.notes === null || data.notes === '') {
-        book.notes = undefined;
-      } else {
-        book.notes = data.notes;
-      }
-    }
+    if (data.rating !== undefined) book.rating = data.rating ?? undefined;
+    // Free-form text: preserve the value as sent, only clearing on null/empty.
+    if (data.notes !== undefined) book.notes = data.notes || undefined;
     if (data.coverUrl !== undefined) book.coverUrl = data.coverUrl?.trim() || undefined;
 
-    const updatedBook = await this.bookRepository.save(book);
-
-    return {
-      message: 'Livro atualizado com sucesso',
-      book: updatedBook,
-    };
+    return this.repository.save(book);
   }
 
-  static async updateStatus(id: string, data: UpdateBookStatusDTO, userId?: string) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
-    }
+  static async updateStatus(userId: string, id: string, status: BookStatus): Promise<Book> {
+    const book = await this.getById(userId, id);
 
-    const book = await this.getById(id, userId);
-
-    // Validação de status
-    if (!data.status || data.status.trim() === '') {
-      throw new Error('Status é obrigatório');
-    }
-
-    const validStatuses = ['to_read', 'reading', 'read'];
-    if (!validStatuses.includes(data.status)) {
-      throw new Error('Status inválido. Use: to_read, reading ou read');
-    }
-
-    // Lógica de datas automáticas
-    if (data.status === BookStatus.READING && !book.startedAt) {
+    if (status === BookStatus.READING && !book.startedAt) {
       book.startedAt = new Date();
     }
-
-    if (data.status === BookStatus.READ && !book.finishedAt) {
+    if (status === BookStatus.READ && !book.finishedAt) {
       book.finishedAt = new Date();
     }
+    book.status = status;
 
-    book.status = data.status;
-
-    const updatedBook = await this.bookRepository.save(book);
-
-    return {
-      message: 'Status atualizado com sucesso',
-      book: updatedBook,
-    };
+    return this.repository.save(book);
   }
 
-  static async remove(id: string, userId?: string) {
-    if (!userId) {
-      throw new Error('Usuário não autenticado');
+  static async remove(userId: string, id: string): Promise<void> {
+    const book = await this.getById(userId, id);
+    await this.repository.remove(book);
+  }
+
+  private static async assertIsbnAvailable(isbn?: string | null): Promise<void> {
+    if (!isbn || isbn.trim() === '') return;
+
+    const existing = await this.repository.findOne({
+      where: { isbn: isbn.trim() },
+      select: ['id'],
+    });
+    if (existing) {
+      throw new ConflictError('ISBN is already registered', 'ISBN_ALREADY_REGISTERED');
     }
-
-    const book = await this.getById(id, userId);
-
-    await this.bookRepository.remove(book);
-
-    return {
-      message: 'Livro removido com sucesso',
-    };
   }
 }

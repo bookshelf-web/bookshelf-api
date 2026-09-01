@@ -1,17 +1,26 @@
 import { Router } from 'express';
-import { booksController } from './booksController';
 import { authMiddleware } from '../../middlewares/authMiddleware';
+import { validate } from '../../middlewares/validate';
+import { asyncHandler } from '../../shared/asyncHandler';
+import { booksController } from './booksController';
+import {
+  bookIdParamsSchema,
+  createBookSchema,
+  updateBookSchema,
+  updateBookStatusSchema,
+} from './booksSchemas';
 
 const router = Router();
+
+router.use(authMiddleware);
 
 /**
  * @swagger
  * /api/books:
  *   post:
- *     summary: Criar novo livro
+ *     summary: Create a book
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
  *       content:
@@ -19,96 +28,58 @@ const router = Router();
  *           schema:
  *             $ref: '#/components/schemas/CreateBookInput'
  *     responses:
- *       201:
- *         description: Livro criado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 book:
- *                   $ref: '#/components/schemas/Book'
- *       400:
- *         description: Dados inválidos
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: ISBN já cadastrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       201: { description: Book created }
+ *       400: { description: Invalid input }
+ *       409: { description: ISBN already registered }
  */
-router.post('/', authMiddleware, booksController.create);
+router.post('/', validate({ body: createBookSchema }), asyncHandler(booksController.create));
 
 /**
  * @swagger
  * /api/books:
  *   get:
- *     summary: Listar todos os livros do usuário
+ *     summary: List the authenticated user's books
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: query, name: page, schema: { type: integer } }
+ *       - { in: query, name: limit, schema: { type: integer } }
+ *       - { in: query, name: status, schema: { type: string, enum: [to_read, reading, read] } }
+ *       - { in: query, name: rating, schema: { type: integer } }
+ *       - { in: query, name: search, schema: { type: string } }
+ *       - { in: query, name: title, schema: { type: string } }
+ *       - { in: query, name: author, schema: { type: string } }
+ *       - { in: query, name: sortBy, schema: { type: string } }
+ *       - { in: query, name: sortOrder, schema: { type: string, enum: [ASC, DESC] } }
  *     responses:
- *       200:
- *         description: Lista de livros
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Book'
+ *       200: { description: Paginated list of books }
  */
-router.get('/', authMiddleware, booksController.list);
+router.get('/', asyncHandler(booksController.list));
 
 /**
  * @swagger
  * /api/books/{id}:
  *   get:
- *     summary: Buscar livro por ID
+ *     summary: Get a book by id
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
  *     responses:
- *       200:
- *         description: Livro encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Book'
- *       404:
- *         description: Livro não encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       200: { description: Book found }
+ *       404: { description: Book not found }
  */
-router.get('/:id', authMiddleware, booksController.getById);
+router.get('/:id', validate({ params: bookIdParamsSchema }), asyncHandler(booksController.getById));
 
 /**
  * @swagger
  * /api/books/{id}:
  *   put:
- *     summary: Atualizar livro
+ *     summary: Update a book
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
  *     requestBody:
  *       required: true
  *       content:
@@ -116,113 +87,63 @@ router.get('/:id', authMiddleware, booksController.getById);
  *           schema:
  *             $ref: '#/components/schemas/UpdateBookInput'
  *     responses:
- *       200:
- *         description: Livro atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 book:
- *                   $ref: '#/components/schemas/Book'
- *       400:
- *         description: Dados inválidos
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Livro não encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       409:
- *         description: ISBN já cadastrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       200: { description: Book updated }
+ *       400: { description: Invalid input }
+ *       404: { description: Book not found }
+ *       409: { description: ISBN already registered }
  */
-router.put('/:id', authMiddleware, booksController.update);
+router.put(
+  '/:id',
+  validate({ params: bookIdParamsSchema, body: updateBookSchema }),
+  asyncHandler(booksController.update),
+);
 
 /**
  * @swagger
  * /api/books/{id}/status:
  *   patch:
- *     summary: Atualizar status do livro
+ *     summary: Update a book's reading status
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [status]
  *             properties:
- *               status:
- *                 type: string
- *                 enum: [to_read, reading, read]
+ *               status: { type: string, enum: [to_read, reading, read] }
  *     responses:
- *       200:
- *         description: Status atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 book:
- *                   $ref: '#/components/schemas/Book'
- *       400:
- *         description: Status inválido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Livro não encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       200: { description: Status updated }
+ *       400: { description: Invalid status }
+ *       404: { description: Book not found }
  */
-router.patch('/:id/status', authMiddleware, booksController.updateStatus);
+router.patch(
+  '/:id/status',
+  validate({ params: bookIdParamsSchema, body: updateBookStatusSchema }),
+  asyncHandler(booksController.updateStatus),
+);
 
 /**
  * @swagger
  * /api/books/{id}:
  *   delete:
- *     summary: Deletar livro
+ *     summary: Delete a book
  *     tags: [Books]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
  *     responses:
- *       204:
- *         description: Livro deletado com sucesso
- *       404:
- *         description: Livro não encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       200: { description: Book deleted }
+ *       404: { description: Book not found }
  */
-router.delete('/:id', authMiddleware, booksController.remove);
+router.delete(
+  '/:id',
+  validate({ params: bookIdParamsSchema }),
+  asyncHandler(booksController.remove),
+);
 
 export default router;

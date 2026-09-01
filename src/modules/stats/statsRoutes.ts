@@ -1,25 +1,20 @@
 import { Router } from 'express';
-import { statsController } from './statsController';
 import { authMiddleware } from '../../middlewares/authMiddleware';
+import { asyncHandler } from '../../shared/asyncHandler';
+import { statsController } from './statsController';
 
 const router = Router();
 
 /**
  * @swagger
- * tags:
- *   name: Stats
- *   description: API statistics
- */
-
-/**
- * @swagger
- * /stats:
+ * /api/stats:
  *   get:
- *     summary: Get API statistics
+ *     summary: Reading statistics for the authenticated user
  *     tags: [Stats]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Aggregated statistics }
  */
-router.get('/', authMiddleware, statsController.overview);
+router.get('/', authMiddleware, asyncHandler(statsController.overview));
 
 export default router;
