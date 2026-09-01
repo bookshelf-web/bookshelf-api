@@ -1,102 +1,91 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { env } from '../../config/env';
+import { asyncHandler } from '../../shared/asyncHandler';
+import { validate } from '../../middlewares/validate';
 import { authController } from './authController';
+import { loginSchema, registerSchema } from './authSchemas';
 
 const router = Router();
 
-// Rate limiter para rotas de autenticação
-// Previne brute force attacks
-// DESABILITADO em ambiente de desenvolvimento e testes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 tentativas por IP
-  message: {
-    error: 'Muitas tentativas de login. Tente novamente mais tarde.',
-  },
+// Brute-force protection. Only active in production so it never interferes with
+// local development or the test suite.
+const productionOnly = () => env.NODE_ENV !== 'production';
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many login attempts. Please try again later.', code: 'RATE_LIMITED' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV !== 'production', // ✅ Desabilita exceto em produção
+  skip: productionOnly,
 });
 
-// Rate limiter mais permissivo para registro
-// DESABILITADO em ambiente de desenvolvimento e testes
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // 3 registros por IP por hora
-  message: {
-    error: 'Muitos registros. Tente novamente mais tarde.',
-  },
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: 'Too many accounts created. Please try again later.', code: 'RATE_LIMITED' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV !== 'production', // ✅ Desabilita exceto em produção
+  skip: productionOnly,
 });
 
 /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Registrar novo usuário
+ *     summary: Register a new user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 minLength: 6
+ *             $ref: '#/components/schemas/RegisterInput'
  *     responses:
  *       201:
- *         description: Usuário criado com sucesso
+ *         description: User registered successfully
  *       400:
- *         description: Dados inválidos
+ *         description: Invalid input
  *       409:
- *         description: Email já cadastrado
+ *         description: Email already registered
  *       429:
- *         description: Muitas tentativas (apenas em produção)
+ *         description: Too many requests (production only)
  */
-router.post('/register', registerLimiter, authController.register);
+router.post(
+  '/register',
+  registerLimiter,
+  validate({ body: registerSchema }),
+  asyncHandler(authController.register),
+);
 
 /**
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Fazer login
+ *     summary: Authenticate a user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
+ *             $ref: '#/components/schemas/LoginInput'
  *     responses:
  *       200:
- *         description: Login realizado com sucesso
+ *         description: Login successful
+ *       400:
+ *         description: Invalid input
  *       401:
- *         description: Credenciais inválidas
+ *         description: Invalid credentials
  *       429:
- *         description: Muitas tentativas (apenas em produção)
+ *         description: Too many requests (production only)
  */
-router.post('/login', authLimiter, authController.login);
+router.post(
+  '/login',
+  loginLimiter,
+  validate({ body: loginSchema }),
+  asyncHandler(authController.login),
+);
 
 export default router;

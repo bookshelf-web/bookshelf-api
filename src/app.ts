@@ -1,49 +1,38 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { env } from './config/env';
 import routes from './routes';
-import setupSwagger from './config/swagger';
+import { setupSwagger } from './config/swagger';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 const app = express();
 
-// Render (e a maioria dos PaaS) serve a app atrás de um proxy reverso.
-// Sem isto o express-rate-limit rejeita o X-Forwarded-For e responde 500.
+// Render (and most PaaS) serve the app behind a reverse proxy; without this
+// express-rate-limit rejects the forwarded client IP.
 app.set('trust proxy', 1);
 
-// Segurança - Headers HTTP seguros
 app.use(helmet());
 
-// CORS configurado - permitir origens específicas
-// Em CI/Docker o frontend roda em http://frontend:5173 e o Chromium acessa via esse hostname
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://frontend:5173',
-];
+app.use(
+  cors({
+    // A disallowed origin simply gets no CORS headers (the browser blocks it).
+    // Throwing here would surface as a 500 instead.
+    origin: (origin, callback) => callback(null, !origin || env.corsOrigins.includes(origin)),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requisições sem origin (mobile apps, Postman, etc)
-    if (!origin) return callback(null, true);
-    
-    // Origin não permitido: apenas não envia os headers de CORS (o navegador
-    // bloqueia). Lançar um Error aqui viraria um 500 no handler padrão do Express.
-    callback(null, allowedOrigins.includes(origin));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(express.json({ limit: '100kb' }));
 
-app.use(express.json());
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/api', routes);
-
-/**
- * Swagger
- */
 setupSwagger(app);
 
-app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }))
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

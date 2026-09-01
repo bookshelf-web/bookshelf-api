@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Book } from './Book';
 
 @Entity('users')
@@ -12,7 +19,8 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  // Never selected by default; queries that need it must opt in explicitly.
+  @Column({ type: 'varchar', length: 255, select: false })
   password!: string;
 
   @OneToMany(() => Book, book => book.user)
