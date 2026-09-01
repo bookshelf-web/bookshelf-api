@@ -35,11 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead code: the unused `where`/`order` builders in `BooksService.list`, the
   previously-unregistered error handler, `getJWTSecret`/`validateEnv` helpers.
 
-## [1.0.0] - 2026-08-31
+## [0.1.0] - 2026-08-31
 
-Initial deployed version: JWT auth, book CRUD with filtering/pagination, reading
-status with automatic timestamps, per-user data isolation, reading statistics,
-Swagger docs, Docker/Render deployment.
+First tagged version (pre-1.0; improvements ongoing): JWT auth, book CRUD with
+filtering/pagination, reading status with automatic timestamps, per-user data
+isolation, reading statistics, Swagger docs, Docker/Render deployment.
 
-[Unreleased]: https://github.com/thiago8rocha/bookshelf-api/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/thiago8rocha/bookshelf-api/releases/tag/v1.0.0
+[Unreleased]: https://github.com/bookshelf-web/bookshelf-api/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/bookshelf-web/bookshelf-api/releases/tag/v0.1.0

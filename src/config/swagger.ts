@@ -32,7 +32,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
     openapi: '3.0.0',
     info: {
       title: 'BookShelf API',
-      version: '1.0.0',
+      version: '0.1.0',
       description: 'REST API for managing a personal book library',
     },
     servers,
