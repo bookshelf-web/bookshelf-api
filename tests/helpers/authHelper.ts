@@ -11,14 +11,14 @@ export class AuthHelper {
   async registerAndLogin(userData?: any): Promise<string> {
     const user = userData || usersFixture.validUser;
 
-    // Registrar usuário
+    // register the user
     const registerResponse = await this.apiClient.register(user);
-    
+
     if (registerResponse.status !== 201) {
       throw new Error(`Failed to register user: ${JSON.stringify(registerResponse.body)}`);
     }
 
-    // Retornar token
+    // return the token
     return registerResponse.body.token;
   }
 

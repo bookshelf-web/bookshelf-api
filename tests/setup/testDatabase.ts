@@ -15,14 +15,14 @@ export const setupTestDatabase = async (): Promise<void> => {
 export const cleanupTestDatabase = async (): Promise<void> => {
   try {
     if (AppDataSource.isInitialized) {
-      // Aguardar qualquer transação pendente
+      // let any pending transaction settle
       await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // Usar TRUNCATE com CASCADE e RESTART IDENTITY
+
+      // TRUNCATE with CASCADE and RESTART IDENTITY
       await AppDataSource.query('TRUNCATE TABLE books RESTART IDENTITY CASCADE');
       await AppDataSource.query('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
-      
-      // Aguardar para garantir que o truncate foi commitado
+
+      // wait for the truncate to commit
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   } catch (error) {

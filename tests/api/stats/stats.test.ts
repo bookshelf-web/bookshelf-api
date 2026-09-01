@@ -1,7 +1,11 @@
 import { ApiClient } from '../../helpers/apiClient';
 import { AuthHelper } from '../../helpers/authHelper';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
+import {
+  setupTestDatabase,
+  cleanupTestDatabase,
+  closeTestDatabase,
+} from '../../setup/testDatabase';
 
 describe('GET /api/stats', () => {
   let apiClient: ApiClient;
@@ -22,8 +26,8 @@ describe('GET /api/stats', () => {
     await closeTestDatabase();
   });
 
-  describe('Cenários de Sucesso', () => {
-    it('deve retornar estatísticas vazias quando usuário não tem livros', async () => {
+  describe('success', () => {
+    it('returns empty stats when the user has no books', async () => {
       const response = await apiClient.getStats();
 
       expect(response.status).toBe(200);
@@ -33,15 +37,15 @@ describe('GET /api/stats', () => {
         byStatus: {
           toRead: 0,
           reading: 0,
-          read: 0
+          read: 0,
         },
         averageRating: 0,
         totalPages: 0,
-        booksWithRating: 0
+        booksWithRating: 0,
       });
     });
 
-    it('deve contar total de livros corretamente', async () => {
+    it('counts the total number of books', async () => {
       await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.createBook(TestDataBuilder.createBook());
@@ -52,10 +56,10 @@ describe('GET /api/stats', () => {
       expect(response.body.stats.total).toBe(3);
     });
 
-    it('deve contar livros por status corretamente', async () => {
-      // Criar livros com diferentes status
-      const book1 = await apiClient.createBook(TestDataBuilder.createBook());
-      
+    it('counts books by status', async () => {
+      // books with different statuses
+      await apiClient.createBook(TestDataBuilder.createBook());
+
       const book2 = await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.updateBookStatus(book2.body.book.id, 'reading');
 
@@ -71,12 +75,12 @@ describe('GET /api/stats', () => {
       expect(response.body.stats.byStatus).toEqual({
         toRead: 1,
         reading: 2,
-        read: 1
+        read: 1,
       });
     });
 
-    it('deve calcular média de rating corretamente', async () => {
-      // Criar livros com ratings
+    it('computes the average rating', async () => {
+      // books with ratings
       const book1 = await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.updateBook(book1.body.book.id, { rating: 5 });
 
@@ -93,15 +97,15 @@ describe('GET /api/stats', () => {
       expect(response.body.stats.booksWithRating).toBe(3);
     });
 
-    it('deve ignorar livros sem rating no cálculo da média', async () => {
-      // Livros com rating
+    it('ignores books without a rating in the average', async () => {
+      // books with a rating
       const book1 = await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.updateBook(book1.body.book.id, { rating: 5 });
 
       const book2 = await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.updateBook(book2.body.book.id, { rating: 3 });
 
-      // Livros sem rating
+      // books without a rating
       await apiClient.createBook(TestDataBuilder.createBook());
       await apiClient.createBook(TestDataBuilder.createBook());
 
@@ -113,7 +117,7 @@ describe('GET /api/stats', () => {
       expect(response.body.stats.total).toBe(4);
     });
 
-    it('deve somar total de páginas corretamente', async () => {
+    it('sums the total number of pages', async () => {
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 300 }));
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 450 }));
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 250 }));
@@ -124,7 +128,7 @@ describe('GET /api/stats', () => {
       expect(response.body.stats.totalPages).toBe(1000);
     });
 
-    it('deve ignorar livros sem páginas no total', async () => {
+    it('ignores books without pages in the total', async () => {
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 300 }));
       await apiClient.createBook(TestDataBuilder.createBook({ pages: undefined }));
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 200 }));
@@ -136,35 +140,35 @@ describe('GET /api/stats', () => {
     });
   });
 
-  it('deve retornar apenas estatísticas do usuário autenticado', async () => {
-    // Garantir limpeza total antes deste teste
+  it('returns only stats for the authenticated user', async () => {
+    // make sure the DB is clean before this test
     await cleanupTestDatabase();
-    
-    // Usuário 1 cria 3 livros
+
+    // user 1 creates 3 books
     await apiClient.createBook(TestDataBuilder.createBook());
     await apiClient.createBook(TestDataBuilder.createBook());
     await apiClient.createBook(TestDataBuilder.createBook());
-  
-    // Usuário 2 cria 5 livros
+
+    // user 2 creates 5 books
     const client2 = await authHelper.getAuthenticatedClient(TestDataBuilder.createUser());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
-  
-    // Verificar stats do usuário 1
+
+    // user 1 stats
     const stats1 = await apiClient.getStats();
     expect(stats1.body.stats.total).toBe(3);
-  
-    // Verificar stats do usuário 2
+
+    // user 2 stats
     const stats2 = await client2.getStats();
     expect(stats2.body.stats.total).toBe(5);
   });
 
-  describe('Cenários Complexos', () => {
-    it('deve calcular estatísticas completas corretamente', async () => {
-      // Criar biblioteca completa
+  describe('complex scenarios', () => {
+    it('computes the full statistics', async () => {
+      // build a full library
       const book1 = await apiClient.createBook(TestDataBuilder.createBook({ pages: 400 }));
       await apiClient.updateBook(book1.body.book.id, { rating: 5 });
       await apiClient.updateBookStatus(book1.body.book.id, 'read');
@@ -176,7 +180,7 @@ describe('GET /api/stats', () => {
       const book3 = await apiClient.createBook(TestDataBuilder.createBook({ pages: 250 }));
       await apiClient.updateBookStatus(book3.body.book.id, 'reading');
 
-      const book4 = await apiClient.createBook(TestDataBuilder.createBook({ pages: 500 }));
+      await apiClient.createBook(TestDataBuilder.createBook({ pages: 500 }));
 
       const response = await apiClient.getStats();
 
@@ -186,36 +190,36 @@ describe('GET /api/stats', () => {
         byStatus: {
           toRead: 1,
           reading: 1,
-          read: 2
+          read: 2,
         },
         averageRating: 4.5, // (5+4)/2
         totalPages: 1450,
-        booksWithRating: 2
+        booksWithRating: 2,
       });
     });
 
-    it('deve recalcular estatísticas após deletar livro', async () => {
+    it('recomputes statistics after a book is deleted', async () => {
       const book1 = await apiClient.createBook(TestDataBuilder.createBook({ pages: 300 }));
-      const book2 = await apiClient.createBook(TestDataBuilder.createBook({ pages: 200 }));
+      await apiClient.createBook(TestDataBuilder.createBook({ pages: 200 }));
       await apiClient.createBook(TestDataBuilder.createBook({ pages: 100 }));
 
-      // Stats iniciais
+      // initial stats
       let stats = await apiClient.getStats();
       expect(stats.body.stats.total).toBe(3);
       expect(stats.body.stats.totalPages).toBe(600);
 
-      // Deletar um livro
+      // delete one book
       await apiClient.deleteBook(book1.body.book.id);
 
-      // Stats atualizadas
+      // updated stats
       stats = await apiClient.getStats();
       expect(stats.body.stats.total).toBe(2);
       expect(stats.body.stats.totalPages).toBe(300);
     });
   });
 
-  describe('Cenários de Autorização', () => {
-    it('deve retornar erro 401 quando não enviar token', async () => {
+  describe('authorization', () => {
+    it('returns 401 without a token', async () => {
       apiClient.clearToken();
 
       const response = await apiClient.getStats();
@@ -224,8 +228,8 @@ describe('GET /api/stats', () => {
       expect(response.body).toHaveProperty('error');
     });
 
-    it('deve retornar erro 401 quando enviar token inválido', async () => {
-      apiClient.setToken('token-invalido');
+    it('returns 401 with an invalid token', async () => {
+      apiClient.setToken('invalid-token');
 
       const response = await apiClient.getStats();
 

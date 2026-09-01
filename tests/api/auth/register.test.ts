@@ -1,7 +1,10 @@
 import { ApiClient } from '../../helpers/apiClient';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
-import usersFixture from '../../fixtures/users.json';
+import {
+  setupTestDatabase,
+  cleanupTestDatabase,
+  closeTestDatabase,
+} from '../../setup/testDatabase';
 
 describe('POST /api/auth/register', () => {
   let apiClient: ApiClient;
@@ -19,14 +22,14 @@ describe('POST /api/auth/register', () => {
     await closeTestDatabase();
   });
 
-  describe('Cenários de Sucesso', () => {
-    it('deve criar usuário com dados válidos', async () => {
+  describe('success', () => {
+    it('creates a user with valid data', async () => {
       const userData = TestDataBuilder.createUser();
 
       const response = await apiClient.register(userData);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('message', 'Usuário criado com sucesso');
+      expect(response.body).toHaveProperty('message', 'User registered successfully');
       expect(response.body).toHaveProperty('user');
       expect(response.body.user).toHaveProperty('id');
       expect(response.body.user).toHaveProperty('name', userData.name);
@@ -36,12 +39,9 @@ describe('POST /api/auth/register', () => {
       expect(typeof response.body.token).toBe('string');
     });
 
-    it('deve criar múltiplos usuários com emails diferentes', async () => {
-      const user1 = TestDataBuilder.createUser();
-      const user2 = TestDataBuilder.createUser();
-
-      const response1 = await apiClient.register(user1);
-      const response2 = await apiClient.register(user2);
+    it('creates multiple users with different emails', async () => {
+      const response1 = await apiClient.register(TestDataBuilder.createUser());
+      const response2 = await apiClient.register(TestDataBuilder.createUser());
 
       expect(response1.status).toBe(201);
       expect(response2.status).toBe(201);
@@ -49,48 +49,38 @@ describe('POST /api/auth/register', () => {
     });
   });
 
-  describe('Cenários de Validação', () => {
-    it('deve retornar erro 400 quando nome não for fornecido', async () => {
-      const userData = TestDataBuilder.createUser({ name: undefined });
-
-      const response = await apiClient.register(userData);
+  describe('validation', () => {
+    it('returns 400 when name is missing', async () => {
+      const response = await apiClient.register(TestDataBuilder.createUser({ name: undefined }));
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('obrigatório');
+      expect(response.body.error).toMatch(/name is required/i);
     });
 
-    it('deve retornar erro 400 quando email não for fornecido', async () => {
-      const userData = TestDataBuilder.createUser({ email: undefined });
-
-      const response = await apiClient.register(userData);
+    it('returns 400 when email is missing', async () => {
+      const response = await apiClient.register(TestDataBuilder.createUser({ email: undefined }));
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('obrigatório');
+      expect(response.body.error).toMatch(/email is required/i);
     });
 
-    it('deve retornar erro 400 quando senha não for fornecida', async () => {
-      const userData = TestDataBuilder.createUser({ password: undefined });
-
-      const response = await apiClient.register(userData);
+    it('returns 400 when password is missing', async () => {
+      const response = await apiClient.register(
+        TestDataBuilder.createUser({ password: undefined }),
+      );
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('obrigatório');
+      expect(response.body.error).toMatch(/password is required/i);
     });
 
-    it('deve retornar erro 400 quando senha tiver menos de 6 caracteres', async () => {
-      const userData = TestDataBuilder.createUser({ password: '12345' });
-
-      const response = await apiClient.register(userData);
+    it('returns 400 when password is shorter than 6 characters', async () => {
+      const response = await apiClient.register(TestDataBuilder.createUser({ password: '12345' }));
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/senha|mínimo|6/i);
+      expect(response.body.error).toMatch(/password|at least|6/i);
     });
 
-    it('deve retornar erro 400 quando todos os campos estiverem vazios', async () => {
+    it('returns 400 when the body is empty', async () => {
       const response = await apiClient.register({});
 
       expect(response.status).toBe(400);
@@ -98,40 +88,30 @@ describe('POST /api/auth/register', () => {
     });
   });
 
-  describe('Cenários de Regras de Negócio', () => {
-    it('deve retornar erro 409 quando email já estiver cadastrado', async () => {
+  describe('business rules', () => {
+    it('returns 409 when the email is already registered', async () => {
       const userData = TestDataBuilder.createUser();
 
-      // Primeiro registro - deve funcionar
       await apiClient.register(userData);
-
-      // Segundo registro com mesmo email - deve falhar
       const response = await apiClient.register(userData);
 
       expect(response.status).toBe(409);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/email.*cadastrado/i);
+      expect(response.body.error).toMatch(/email.*already registered/i);
     });
   });
 
-  describe('Cenários de Segurança', () => {
-    it('não deve retornar a senha no response', async () => {
-      const userData = TestDataBuilder.createUser();
-
-      const response = await apiClient.register(userData);
+  describe('security', () => {
+    it('never returns the password', async () => {
+      const response = await apiClient.register(TestDataBuilder.createUser());
 
       expect(response.status).toBe(201);
       expect(response.body.user).not.toHaveProperty('password');
     });
 
-    it('deve gerar token JWT válido', async () => {
-      const userData = TestDataBuilder.createUser();
-
-      const response = await apiClient.register(userData);
+    it('returns a well-formed JWT', async () => {
+      const response = await apiClient.register(TestDataBuilder.createUser());
 
       expect(response.status).toBe(201);
-      expect(response.body.token).toBeDefined();
-      // JWT tem 3 partes separadas por ponto
       expect(response.body.token.split('.')).toHaveLength(3);
     });
   });

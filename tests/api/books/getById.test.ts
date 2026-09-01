@@ -1,7 +1,11 @@
 import { ApiClient } from '../../helpers/apiClient';
 import { AuthHelper } from '../../helpers/authHelper';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
+import {
+  setupTestDatabase,
+  cleanupTestDatabase,
+  closeTestDatabase,
+} from '../../setup/testDatabase';
 
 describe('GET /api/books/:id', () => {
   let apiClient: ApiClient;
@@ -21,10 +25,10 @@ describe('GET /api/books/:id', () => {
     await closeTestDatabase();
   });
 
-  describe('Cenários de Sucesso', () => {
-    it('deve retornar livro existente', async () => {
+  describe('success', () => {
+    it('returns an existing book', async () => {
       await authHelper.getAuthenticatedClient();
-      
+
       const bookData = TestDataBuilder.createBook();
       const createResponse = await apiClient.createBook(bookData);
       const bookId = createResponse.body.book.id;
@@ -38,9 +42,9 @@ describe('GET /api/books/:id', () => {
       expect(response.body.book).toHaveProperty('author', bookData.author);
     });
 
-    it('deve retornar todos os campos do livro', async () => {
+    it('returns every book field', async () => {
       await authHelper.getAuthenticatedClient();
-      
+
       const bookData = TestDataBuilder.createBook({
         title: 'Complete Book',
         author: 'Author Name',
@@ -48,7 +52,7 @@ describe('GET /api/books/:id', () => {
         publisher: 'Publisher',
         publishedYear: 2020,
         pages: 300,
-        description: 'Test description'
+        description: 'Test description',
       });
 
       const createResponse = await apiClient.createBook(bookData);
@@ -69,26 +73,26 @@ describe('GET /api/books/:id', () => {
     });
   });
 
-  describe('Cenários de Erro', () => {
-    it('deve retornar erro 404 quando livro não existe', async () => {
+  describe('error cases', () => {
+    it('returns 404 when the book does not exist', async () => {
       await authHelper.getAuthenticatedClient();
-      
+
       const fakeId = '550e8400-e29b-41d4-a716-446655440000'; // UUID válido mas inexistente
 
       const response = await apiClient.getBookById(fakeId);
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/não encontrado/i);
+      expect(response.body.error).toMatch(/not found/i);
     });
 
-    it('deve retornar erro 404 quando tentar acessar livro de outro usuário', async () => {
-      // Usuário 1 cria um livro
+    it('returns 404 when accessing a book owned by another user', async () => {
+      // user 1 creates a book
       const client1 = await authHelper.getAuthenticatedClient();
       const createResponse = await client1.createBook(TestDataBuilder.createBook());
       const bookId = createResponse.body.book.id;
 
-      // Usuário 2 tenta acessar livro do usuário 1
+      // user 2 tries to access user 1's book
       const client2 = await authHelper.getAuthenticatedClient(TestDataBuilder.createUser());
       const response = await client2.getBookById(bookId);
 
@@ -97,8 +101,8 @@ describe('GET /api/books/:id', () => {
     });
   });
 
-  describe('Cenários de Autorização', () => {
-    it('deve retornar erro 401 quando não enviar token', async () => {
+  describe('authorization', () => {
+    it('returns 401 without a token', async () => {
       const fakeId = '550e8400-e29b-41d4-a716-446655440000';
 
       const response = await apiClient.getBookById(fakeId);
@@ -107,8 +111,8 @@ describe('GET /api/books/:id', () => {
       expect(response.body).toHaveProperty('error');
     });
 
-    it('deve retornar erro 401 quando enviar token inválido', async () => {
-      apiClient.setToken('token-invalido');
+    it('returns 401 with an invalid token', async () => {
+      apiClient.setToken('invalid-token');
       const fakeId = '550e8400-e29b-41d4-a716-446655440000';
 
       const response = await apiClient.getBookById(fakeId);
