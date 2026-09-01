@@ -141,29 +141,25 @@ describe('GET /api/stats', () => {
   });
 
   it('returns only stats for the authenticated user', async () => {
-    // make sure the DB is clean before this test
     await cleanupTestDatabase();
 
-    // user 1 creates 3 books
-    await apiClient.createBook(TestDataBuilder.createBook());
-    await apiClient.createBook(TestDataBuilder.createBook());
-    await apiClient.createBook(TestDataBuilder.createBook());
+    // Independent clients: AuthHelper mutates the token on the client it wraps.
+    const client1 = new ApiClient();
+    await new AuthHelper(client1).getAuthenticatedClient();
+    await client1.createBook(TestDataBuilder.createBook());
+    await client1.createBook(TestDataBuilder.createBook());
+    await client1.createBook(TestDataBuilder.createBook());
 
-    // user 2 creates 5 books
-    const client2 = await authHelper.getAuthenticatedClient(TestDataBuilder.createUser());
+    const client2 = new ApiClient();
+    await new AuthHelper(client2).getAuthenticatedClient(TestDataBuilder.createUser());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
     await client2.createBook(TestDataBuilder.createBook());
 
-    // user 1 stats
-    const stats1 = await apiClient.getStats();
-    expect(stats1.body.stats.total).toBe(3);
-
-    // user 2 stats
-    const stats2 = await client2.getStats();
-    expect(stats2.body.stats.total).toBe(5);
+    expect((await client1.getStats()).body.stats.total).toBe(3);
+    expect((await client2.getStats()).body.stats.total).toBe(5);
   });
 
   describe('complex scenarios', () => {

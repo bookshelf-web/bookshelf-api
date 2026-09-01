@@ -58,27 +58,22 @@ describe('GET /api/books', () => {
     });
 
     it('returns only the authenticated user’s books', async () => {
-      // make sure the DB is clean before this test
       await cleanupTestDatabase();
 
-      // user 1 creates 2 books
-      const client1 = await authHelper.getAuthenticatedClient();
+      // Independent clients: AuthHelper mutates the token on the client it wraps.
+      const client1 = new ApiClient();
+      await new AuthHelper(client1).getAuthenticatedClient();
       await client1.createBook(TestDataBuilder.createBook());
       await client1.createBook(TestDataBuilder.createBook());
 
-      // user 2 creates 3 books
-      const client2 = await authHelper.getAuthenticatedClient(TestDataBuilder.createUser());
+      const client2 = new ApiClient();
+      await new AuthHelper(client2).getAuthenticatedClient(TestDataBuilder.createUser());
       await client2.createBook(TestDataBuilder.createBook());
       await client2.createBook(TestDataBuilder.createBook());
       await client2.createBook(TestDataBuilder.createBook());
 
-      // user 1 sees only their 2 books
-      const response1 = await client1.getBooks();
-      expect(response1.body.books).toHaveLength(2);
-
-      // user 2 sees only their 3 books
-      const response2 = await client2.getBooks();
-      expect(response2.body.books).toHaveLength(3);
+      expect((await client1.getBooks()).body.books).toHaveLength(2);
+      expect((await client2.getBooks()).body.books).toHaveLength(3);
     });
   });
 
