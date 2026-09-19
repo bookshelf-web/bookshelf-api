@@ -1,7 +1,34 @@
 # BookShelf API
 
+[![CI](https://github.com/bookshelf-web/bookshelf-api/actions/workflows/ci.yml/badge.svg)](https://github.com/bookshelf-web/bookshelf-api/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?logo=postgresql&logoColor=white)
+
 REST API for managing a personal book library, built with Node.js, TypeScript,
 Express, TypeORM and PostgreSQL.
+
+- **Live API:** <https://bookshelf-api-wfzs.onrender.com> (Swagger UI at `/api-docs`)
+- **Frontend:** [bookshelf-frontend](https://github.com/bookshelf-web/bookshelf-frontend),
+  live at <https://bookshelf-web.github.io/bookshelf-frontend/>
+
+> The demo runs on Render's free tier and sleeps when idle, so the first request
+> after a period of inactivity can take up to a minute.
+
+## Table of contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [Scripts](#scripts)
+- [API overview](#api-overview)
+- [Testing](#testing)
+- [Project structure](#project-structure)
+- [Frontend](#frontend)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -19,7 +46,7 @@ Express, TypeORM and PostgreSQL.
 - Node.js 18+
 - PostgreSQL 14+ (or Docker)
 
-## Setup
+## Getting started
 
 ```bash
 npm install
@@ -99,6 +126,23 @@ docker compose up -d db
 npm test
 ```
 
+### End-to-end tests
+
+Full-stack suites (API + UI) live in separate repositories:
+
+| Suite | Repository | Report |
+|-------|------------|--------|
+| Playwright (TypeScript) | [bookshelf-playwright-tests](https://github.com/thiago8rocha/bookshelf-playwright-tests) | [Allure](https://thiago8rocha.github.io/bookshelf-playwright-tests/allure-report/) |
+| Robot Framework | [bookshelf-robotframework-tests](https://github.com/thiago8rocha/bookshelf-robotframework-tests) | [Allure](https://thiago8rocha.github.io/bookshelf-robotframework-tests/allure-report/) |
+
+To run them without leaving this repository, use the
+[Run E2E Tests](.github/workflows/run-e2e-tests.yml) workflow: *Actions → Run E2E
+Tests → Run workflow*, choose `playwright`, `robot` or `both` (and a Robot suite
+such as `smoke`), and follow the links in the run summary.
+
+It needs a repository secret named `E2E_DISPATCH_TOKEN`: a fine-grained personal
+access token with **Actions: read and write** on the two test repositories.
+
 ## Project structure
 
 ```
@@ -112,3 +156,28 @@ src/
   server.ts     entry point
 tests/          API tests (Jest + Supertest)
 ```
+
+## Frontend
+
+The web client lives in a separate repository:
+[bookshelf-web/bookshelf-frontend](https://github.com/bookshelf-web/bookshelf-frontend).
+To run both locally, start this API (port `3000`) and then the frontend's dev
+server, which proxies `/api` to it and serves the app at
+<http://localhost:5173>. When hosting the frontend elsewhere,
+add its origin to `CORS_ORIGIN`.
+
+## Contributing
+
+Contributions are welcome. Fork the repository, create a branch, and open a pull
+request. Run `npm run lint`, `npm run typecheck` and `npm test` before submitting.
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
+Notable changes are tracked in [CHANGELOG.md](CHANGELOG.md); to report a security
+issue, see [SECURITY.md](SECURITY.md).
+
+## License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Author
+
+**Thiago Rocha** — [@thiago8rocha](https://github.com/thiago8rocha)

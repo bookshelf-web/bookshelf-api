@@ -1,0 +1,61 @@
+name: Run E2E Tests
+
+# Manually triggers the external end-to-end suites (Playwright and/or Robot
+# Framework). Requires a repository secret named E2E_DISPATCH_TOKEN: a
+# fine-grained PAT with "Actions: read and write" on the two test repositories.
+
+on:
+  workflow_dispatch:
+    inputs:
+      framework:
+        description: "Which suite to trigger"
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - playwright
+          - robot
+      robot_suite:
+        description: "Robot Framework suite (ignored for Playwright)"
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - all-full
+          - smoke
+          - regression
+          - api
+          - ui
+          - e2e
+          - negative
+
+permissions: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.E2E_DISPATCH_TOKEN }}
+      FRAMEWORK: ${{ inputs.framework }}
+      ROBOT_SUITE: ${{ inputs.robot_suite }}
+    steps:
+      - name: Check dispatch token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Secret E2E_DISPATCH_TOKEN is not set."
+            exit 1
+          fi
+
+      - name: Trigger Playwright tests
+        if: env.FRAMEWORK != 'robot'
+        run: |
+          gh workflow run playwright.yml --repo thiago8rocha/bookshelf-playwright-tests
+          echo "Playwright: https://github.com/thiago8rocha/bookshelf-playwright-tests/actions/workflows/playwright.yml" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Trigger Robot Framework tests
+        if: env.FRAMEWORK != 'playwright'
+        run: |
+          gh workflow run robot.yml --repo thiago8rocha/bookshelf-robotframework-tests -f test_suite="$ROBOT_SUITE"
+          echo "Robot Framework: https://github.com/thiago8rocha/bookshelf-robotframework-tests/actions/workflows/robot.yml" >> "$GITHUB_STEP_SUMMARY"
