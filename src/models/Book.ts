@@ -6,11 +6,16 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { BookStatus } from '../types/books';
 import { User } from './User';
 
 @Entity('books')
+@Index('idx_books_user_id', ['userId'])
+@Index('idx_books_status', ['status'])
+@Index('idx_books_title', ['title'])
+@Index('idx_books_author', ['author'])
 export class Book {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -22,31 +27,31 @@ export class Book {
   author!: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
-  isbn?: string;
+  isbn?: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  publisher?: string;
+  publisher?: string | null;
 
   @Column({ type: 'int', nullable: true, name: 'published_year' })
-  publishedYear?: number;
+  publishedYear?: number | null;
 
   @Column({ type: 'int', nullable: true })
-  pages?: number;
+  pages?: number | null;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
-  language?: string;
+  language?: string | null;
 
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  description?: string | null;
 
   @Column({ type: 'int', nullable: true })
-  rating?: number;
+  rating?: number | null;
 
   @Column({ type: 'text', nullable: true })
-  notes?: string;
+  notes?: string | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true, name: 'cover_url' })
-  coverUrl?: string;
+  coverUrl?: string | null;
 
   @Column({
     type: 'enum',
@@ -56,10 +61,10 @@ export class Book {
   status!: BookStatus;
 
   @Column({ type: 'timestamp', nullable: true, name: 'started_at' })
-  startedAt?: Date;
+  startedAt?: Date | null;
 
   @Column({ type: 'timestamp', nullable: true, name: 'finished_at' })
-  finishedAt?: Date;
+  finishedAt?: Date | null;
 
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;

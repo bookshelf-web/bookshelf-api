@@ -89,16 +89,17 @@ export class BooksService {
     if (data.title !== undefined) book.title = data.title;
     if (data.author !== undefined) book.author = data.author;
     if (data.status !== undefined) book.status = data.status;
-    if (data.isbn !== undefined) book.isbn = data.isbn?.trim() || undefined;
-    if (data.publisher !== undefined) book.publisher = data.publisher?.trim() || undefined;
-    if (data.publishedYear !== undefined) book.publishedYear = data.publishedYear ?? undefined;
-    if (data.pages !== undefined) book.pages = data.pages ?? undefined;
-    if (data.language !== undefined) book.language = data.language?.trim() || undefined;
-    if (data.description !== undefined) book.description = data.description?.trim() || undefined;
-    if (data.rating !== undefined) book.rating = data.rating ?? undefined;
+    if (data.isbn !== undefined) book.isbn = data.isbn?.trim() || null;
+    if (data.publisher !== undefined) book.publisher = data.publisher?.trim() || null;
+    if (data.publishedYear !== undefined) book.publishedYear = data.publishedYear ?? null;
+    if (data.pages !== undefined) book.pages = data.pages ?? null;
+    if (data.language !== undefined) book.language = data.language?.trim() || null;
+    if (data.description !== undefined) book.description = data.description?.trim() || null;
+    if (data.rating !== undefined) book.rating = data.rating ?? null;
     // Free-form text: preserve the value as sent, only clearing on null/empty.
-    if (data.notes !== undefined) book.notes = data.notes || undefined;
-    if (data.coverUrl !== undefined) book.coverUrl = data.coverUrl?.trim() || undefined;
+    // Cleared fields are set to null: TypeORM ignores undefined on save.
+    if (data.notes !== undefined) book.notes = data.notes || null;
+    if (data.coverUrl !== undefined) book.coverUrl = data.coverUrl?.trim() || null;
 
     return this.repository.save(book);
   }

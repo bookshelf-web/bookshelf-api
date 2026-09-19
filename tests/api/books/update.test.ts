@@ -70,6 +70,35 @@ describe('PUT /api/books/:id', () => {
       expect(response.body.book.publisher).toBe(updateData.publisher);
     });
 
+    it('clears optional fields when null is sent', async () => {
+      await apiClient.updateBook(bookId, {
+        rating: 4,
+        notes: 'To be cleared',
+        publisher: 'Some Publisher',
+        description: 'Some description',
+        pages: 120,
+      });
+
+      const response = await apiClient.updateBook(bookId, {
+        rating: null,
+        notes: null,
+        publisher: null,
+        description: null,
+        pages: null,
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body.book.rating).toBeNull();
+      expect(response.body.book.notes).toBeNull();
+      expect(response.body.book.publisher).toBeNull();
+      expect(response.body.book.description).toBeNull();
+      expect(response.body.book.pages).toBeNull();
+
+      const persisted = await apiClient.getBookById(bookId);
+      expect(persisted.body.book.rating).toBeNull();
+      expect(persisted.body.book.notes).toBeNull();
+    });
+
     it('adds rating and notes', async () => {
       const updateData = {
         rating: 5,
