@@ -24,7 +24,40 @@ export const AppDataSource = new DataSource({
   entities: [User, Book],
 });
 
+// Supabase exposes every `public` table through its REST API using the public
+// `anon` key. This API only talks to Postgres directly (role `postgres`, which
+// bypasses RLS), so on Supabase we close that door: enable RLS and revoke the
+// API roles. It is a no-op on plain Postgres, where those roles do not exist,
+// and idempotent, so it is safe to run on every start.
+const LOCK_DOWN_API_ROLES_SQL = `
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    FOREACH tbl IN ARRAY ARRAY['users', 'books'] LOOP
+      IF to_regclass('public.' || tbl) IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
+        EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon, authenticated', tbl);
+      END IF;
+    END LOOP;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+  END IF;
+END
+$$;
+`;
+
+export async function lockDownApiRoles(): Promise<void> {
+  try {
+    await AppDataSource.query(LOCK_DOWN_API_ROLES_SQL);
+  } catch (error) {
+    console.warn('Could not lock down Supabase API roles:', (error as Error).message);
+  }
+}
+
 export async function initializeDatabase(): Promise<void> {
   await AppDataSource.initialize();
+  await lockDownApiRoles();
   console.log('Database connected');
 }

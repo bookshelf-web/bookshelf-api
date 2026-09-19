@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- On startup the API enables Row Level Security on its tables and revokes the
+  Supabase `anon`/`authenticated` roles, so the data is not readable through
+  Supabase's public REST API. No-op on plain PostgreSQL.
+
 ### Changed
 
 - **BREAKING (API responses):** error bodies now include a machine-readable

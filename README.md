@@ -86,6 +86,13 @@ npm run build && npm start   # production build
 The schema is created automatically via TypeORM `synchronize` when `NODE_ENV=test`
 or `DB_SYNC=true`; `scripts/init-db.sql` seeds it for the local Docker database.
 
+### Hosting on Supabase
+
+Supabase exposes every `public` table through its REST API with a public key. The API
+talks to Postgres directly, so on startup it enables Row Level Security on its tables and
+revokes access for the `anon`/`authenticated` roles (a no-op on plain Postgres). Nothing
+to configure; only the `postgres` connection in `DATABASE_URL` can read the data.
+
 ## Scripts
 
 | Script              | Description                        |
