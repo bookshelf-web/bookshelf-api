@@ -23,7 +23,8 @@ export class User {
     type: 'enum',
     enum: Role,
     array: true,
-    default: () => `'{${DEFAULT_ROLES.join(',')}}'`,
+    // An array, not a function: TypeORM renders it as '{reader}' for enum arrays.
+    default: DEFAULT_ROLES,
   })
   roles!: Role[];
 
