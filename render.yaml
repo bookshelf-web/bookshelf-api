@@ -9,8 +9,6 @@ services:
         value: production
       - key: API_PREFIX
         value: /api
-      - key: DB_SYNC
-        value: true
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

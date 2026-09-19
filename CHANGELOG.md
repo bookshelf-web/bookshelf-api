@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- TypeORM migrations (`src/migrations`) with `migration:*` scripts. Pending
+  migrations run on startup, replacing the `DB_SYNC` flag (removed). The baseline
+  is idempotent for existing databases.
+- Indexes on `books` (`user_id`, `status`, `title`, `author`).
+
 ### Security
 
 - On startup the API enables Row Level Security on its tables and revokes the

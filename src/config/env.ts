@@ -9,8 +9,6 @@ const DEFAULT_CORS_ORIGINS = [
   'http://frontend:5173',
 ];
 
-const booleanString = z.enum(['true', 'false']).transform(value => value === 'true');
-
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -23,7 +21,6 @@ const envSchema = z
     DB_USER: z.string().optional(),
     DB_PASSWORD: z.string().optional(),
     DB_NAME: z.string().optional(),
-    DB_SYNC: booleanString.default('false'),
 
     JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
     JWT_EXPIRES_IN: z.string().default('7d'),

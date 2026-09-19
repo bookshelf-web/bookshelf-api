@@ -1,3 +1,4 @@
+import path from 'path';
 import { DataSource } from 'typeorm';
 import { env } from './env';
 import { User } from '../models/User';
@@ -17,9 +18,10 @@ const connection = env.DATABASE_URL
 export const AppDataSource = new DataSource({
   type: 'postgres',
   ...connection,
-  // The project has no real migrations: `synchronize` creates the schema for the
-  // (throwaway) test database and, when DB_SYNC=true, for the hosted test env.
-  synchronize: env.NODE_ENV === 'test' || env.DB_SYNC,
+  // Only the throwaway test database is built with `synchronize`; every other
+  // environment is versioned by the migrations in src/migrations.
+  synchronize: env.NODE_ENV === 'test',
+  migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
   logging: env.NODE_ENV === 'development',
   entities: [User, Book],
 });
@@ -35,7 +37,7 @@ DECLARE
   tbl text;
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-    FOREACH tbl IN ARRAY ARRAY['users', 'books'] LOOP
+    FOREACH tbl IN ARRAY ARRAY['users', 'books', 'migrations'] LOOP
       IF to_regclass('public.' || tbl) IS NOT NULL THEN
         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
         EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon, authenticated', tbl);
@@ -56,8 +58,17 @@ export async function lockDownApiRoles(): Promise<void> {
   }
 }
 
+export async function runPendingMigrations(): Promise<void> {
+  if (AppDataSource.options.synchronize) return;
+  const applied = await AppDataSource.runMigrations();
+  if (applied.length > 0) {
+    console.log(`Applied migrations: ${applied.map(migration => migration.name).join(', ')}`);
+  }
+}
+
 export async function initializeDatabase(): Promise<void> {
   await AppDataSource.initialize();
+  await runPendingMigrations();
   await lockDownApiRoles();
   console.log('Database connected');
 }

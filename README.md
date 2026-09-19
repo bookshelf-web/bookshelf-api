@@ -80,11 +80,24 @@ npm run build && npm start   # production build
 | `DB_USER`        | yes, unless `DATABASE_URL`  | –             | |
 | `DB_PASSWORD`    | yes, unless `DATABASE_URL`  | –             | |
 | `DB_NAME`        | yes, unless `DATABASE_URL`  | –             | |
-| `DB_SYNC`        | no                          | `false`       | run `synchronize` on the hosted DB |
 | `CORS_ORIGIN`    | no                          | localhost set | comma-separated list of allowed origins |
 
-The schema is created automatically via TypeORM `synchronize` when `NODE_ENV=test`
-or `DB_SYNC=true`; `scripts/init-db.sql` seeds it for the local Docker database.
+## Database migrations
+
+The schema is versioned with TypeORM migrations in [`src/migrations`](src/migrations).
+On startup the API applies any pending ones (except when `NODE_ENV=test`, where the
+throwaway test database is built with `synchronize`). The baseline migration is
+idempotent, so it is also safe on databases created earlier by `synchronize` or by
+`scripts/init-db.sql`.
+
+| Script                                    | Description                                  |
+|-------------------------------------------|----------------------------------------------|
+| `npm run migration:show`                  | List applied and pending migrations          |
+| `npm run migration:run`                   | Apply pending migrations                     |
+| `npm run migration:revert`                | Revert the last applied migration            |
+| `npm run migration:generate -- src/migrations/Name` | Generate a migration from entity changes |
+
+Changing an entity? Generate a migration and commit it together with the change.
 
 ### Hosting on Supabase
 
