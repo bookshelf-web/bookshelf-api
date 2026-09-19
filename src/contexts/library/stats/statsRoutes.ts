@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../middlewares/authMiddleware';
-import { asyncHandler } from '../../shared/asyncHandler';
+import { authMiddleware } from '../../../middlewares/authMiddleware';
+import { asyncHandler } from '../../../shared/asyncHandler';
 import { statsController } from './statsController';
 
 const router = Router();

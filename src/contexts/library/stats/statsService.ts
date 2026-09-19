@@ -1,6 +1,6 @@
-import { AppDataSource } from '../../config/database';
-import { Book } from '../../models/Book';
-import { BookStatus } from '../../types/books';
+import { AppDataSource } from '../../../config/database';
+import { Book } from '../models/Book';
+import { BookStatus } from '../types';
 
 interface Overview {
   total: number;

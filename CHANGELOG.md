@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Accounts with roles** (`reader`, `buyer`, `seller`, `admin`): register with an optional
+  `roles` list, `GET /api/me`, `PATCH /api/me/roles`. The library (`/books`, `/stats`) now
+  needs the `reader` role; existing accounts default to it. Admins come from `ADMIN_EMAILS`.
+- **Companies**: `POST/GET/PUT /api/companies`, member management, and admin verification
+  (`/api/admin/companies`). CNPJ is validated and unique.
+- **Bounded contexts** (`identity`, `library`) with ESLint-enforced boundaries, structured
+  JSON logs (pino), an `X-Request-Id` on every response, and `context`/`requestId` in error
+  bodies. See `docs/architecture.md`.
+- Unit test suite (`npm run test:unit`) with mocked persistence and coverage thresholds.
 - TypeORM migrations (`src/migrations`) with `migration:*` scripts. Pending
   migrations run on startup, replacing the `DB_SYNC` flag (removed). The baseline
   is idempotent for existing databases.

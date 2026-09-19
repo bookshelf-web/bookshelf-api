@@ -60,6 +60,13 @@ export class ApiClient {
     return this.token ? req.set('Authorization', `Bearer ${this.token}`) : req;
   }
 
+  // Any other endpoint (identity: /me, /companies, /admin/...)
+  async call(method: 'get' | 'post' | 'put' | 'patch' | 'delete', path: string, body?: unknown) {
+    const req = request(app)[method](`${this.baseURL}${path}`);
+    if (body !== undefined) req.send(body as object);
+    return this.token ? req.set('Authorization', `Bearer ${this.token}`) : req;
+  }
+
   // Health check
   async healthCheck() {
     return request(app).get('/health');

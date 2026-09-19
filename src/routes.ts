@@ -1,12 +1,11 @@
 import { Router } from 'express';
-import authRoutes from './modules/auth/authRoutes';
-import booksRoutes from './modules/books/booksRoutes';
-import statsRoutes from './modules/stats/statsRoutes';
+import { identityRoutes } from './contexts/identity';
+import { libraryRoutes } from './contexts/library';
 
+// Each bounded context owns its URL prefixes (identity: /auth; library: /books, /stats).
 const routes = Router();
 
-routes.use('/auth', authRoutes);
-routes.use('/books', booksRoutes);
-routes.use('/stats', statsRoutes);
+routes.use(identityRoutes);
+routes.use(libraryRoutes);
 
 export default routes;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BookStatus } from '../../types/books';
+import { BookStatus } from '../types';
 
 /** Columns clients may sort by (whitelist guards against SQL injection). */
 export const SORTABLE_COLUMNS = [

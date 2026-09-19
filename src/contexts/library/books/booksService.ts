@@ -1,7 +1,7 @@
-import { AppDataSource } from '../../config/database';
-import { Book } from '../../models/Book';
-import { ConflictError, NotFoundError } from '../../shared/errors';
-import { BookStatus } from '../../types/books';
+import { AppDataSource } from '../../../config/database';
+import { Book } from '../models/Book';
+import { ConflictError, NotFoundError } from '../../../shared/errors';
+import { BookStatus } from '../types';
 import { CreateBookInput, ListBooksQuery, SORTABLE_COLUMNS, UpdateBookInput } from './booksSchemas';
 
 interface Pagination {

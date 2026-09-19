@@ -15,6 +15,8 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
     throw new UnauthorizedError('Malformed authentication token', 'TOKEN_MALFORMED');
   }
 
-  req.userId = verifyAuthToken(token).userId;
+  const { userId, roles } = verifyAuthToken(token);
+  req.userId = userId;
+  req.userRoles = roles;
   next();
 };

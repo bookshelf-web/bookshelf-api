@@ -60,6 +60,16 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  readonly statusCode = 403;
+  readonly code: string;
+
+  constructor(message = 'Forbidden', code = 'FORBIDDEN', details?: unknown) {
+    super(message, details);
+    this.code = code;
+  }
+}
+
 export class NotFoundError extends AppError {
   readonly statusCode = 404;
   readonly code: string;

@@ -8,6 +8,9 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/server.ts'
   ],
+  coverageThreshold: {
+    global: { statements: 85, branches: 75, functions: 85, lines: 85 },
+  },
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleFileExtensions: ['ts', 'js', 'json'],
@@ -20,6 +23,7 @@ module.exports = {
     }]
   },
   testTimeout: 90000,
+  setupFiles: ['<rootDir>/tests/setup/env.ts'],
   setupFilesAfterEnv: [],
   verbose: true
 };

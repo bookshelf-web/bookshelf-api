@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { env } from '../../config/env';
-import { asyncHandler } from '../../shared/asyncHandler';
-import { validate } from '../../middlewares/validate';
+import { env } from '../../../config/env';
+import { asyncHandler } from '../../../shared/asyncHandler';
+import { validate } from '../../../middlewares/validate';
 import { authController } from './authController';
 import { loginSchema, registerSchema } from './authSchemas';
 

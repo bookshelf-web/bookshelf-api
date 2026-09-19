@@ -26,9 +26,16 @@ const envSchema = z
     JWT_EXPIRES_IN: z.string().default('7d'),
 
     CORS_ORIGIN: z.string().optional(),
+    // Comma-separated emails that are granted the admin role on register/login.
+    ADMIN_EMAILS: z.string().optional(),
+    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   })
   .transform(raw => ({
     ...raw,
+    adminEmails: (raw.ADMIN_EMAILS ?? '')
+      .split(',')
+      .map(email => email.trim().toLowerCase())
+      .filter(Boolean),
     corsOrigins: raw.CORS_ORIGIN
       ? raw.CORS_ORIGIN.split(',').map(origin => origin.trim())
       : DEFAULT_CORS_ORIGINS,

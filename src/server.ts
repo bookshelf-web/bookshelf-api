@@ -1,17 +1,20 @@
 import app from './app';
 import { env } from './config/env';
 import { initializeDatabase } from './config/database';
+import { contextLogger } from './shared/logger';
+
+const log = contextLogger('platform');
 
 async function startServer(): Promise<void> {
   await initializeDatabase();
 
   app.listen(env.PORT, () => {
-    console.log(`BookShelf API running on port ${env.PORT} (${env.NODE_ENV})`);
-    console.log(`Docs: http://localhost:${env.PORT}/api-docs`);
+    log.info({ port: env.PORT, env: env.NODE_ENV }, 'BookShelf API running');
+    log.info(`Docs: http://localhost:${env.PORT}/api-docs`);
   });
 }
 
 startServer().catch(error => {
-  console.error('Failed to start server:', error);
+  log.fatal({ err: error }, 'Failed to start server');
   process.exit(1);
 });

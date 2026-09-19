@@ -48,6 +48,12 @@ const swaggerOptions: swaggerJSDoc.Options = {
             name: { type: 'string', example: 'Jane Doe' },
             email: { type: 'string', format: 'email', example: 'jane@example.com' },
             password: { type: 'string', format: 'password', minLength: 6, example: 'secret123' },
+            roles: {
+              type: 'array',
+              description: 'What the account will be used for. Defaults to [reader].',
+              items: { type: 'string', enum: ['reader', 'buyer', 'seller'] },
+              example: ['reader', 'buyer'],
+            },
           },
         },
         LoginInput: {
@@ -88,7 +94,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
   },
   apis: [
     // __dirname is src/config (dev) or dist/config (prod); the {ts,js} glob covers both.
-    path.join(__dirname, '../modules/**/*.{ts,js}'),
+    path.join(__dirname, '../contexts/**/*.{ts,js}'),
     path.join(__dirname, '../routes.{ts,js}'),
   ],
 };

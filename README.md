@@ -81,6 +81,8 @@ npm run build && npm start   # production build
 | `DB_PASSWORD`    | yes, unless `DATABASE_URL`  | –             | |
 | `DB_NAME`        | yes, unless `DATABASE_URL`  | –             | |
 | `CORS_ORIGIN`    | no                          | localhost set | comma-separated list of allowed origins |
+| `ADMIN_EMAILS`   | no                          | –             | comma-separated emails granted the `admin` role at register/login |
+| `LOG_LEVEL`      | no                          | `info`        | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` |
 
 ## Database migrations
 
@@ -117,7 +119,8 @@ frontend every 14 minutes on weekdays to keep them available.
 | `npm run dev`       | Start with hot reload              |
 | `npm run build`     | Compile TypeScript to `dist/`      |
 | `npm start`         | Run the compiled build             |
-| `npm test`          | Run the test suite with coverage   |
+| `npm test`          | Run the whole suite (unit + API) with coverage |
+| `npm run test:unit` | Unit tests only; no database needed |
 | `npm run typecheck` | Type-check without emitting        |
 | `npm run lint`      | Lint `src` and `tests`             |
 | `npm run format`    | Format with Prettier               |
@@ -139,7 +142,26 @@ Base path: `/api`. All book and stats endpoints require
 | DELETE | `/books/:id`             | Delete a book           |
 | GET    | `/stats`                 | Reading statistics      |
 
-Errors are returned as `{ "error": string, "code": string, "details"?: unknown }`.
+Accounts, roles and companies (see [docs/architecture.md](docs/architecture.md)):
+
+| Method | Endpoint                          | Description |
+|--------|-----------------------------------|-------------|
+| GET    | `/me`                             | Profile, roles and companies |
+| PATCH  | `/me/roles`                       | Add/remove `reader`, `buyer`, `seller`; returns a fresh token |
+| POST   | `/companies`                      | Register a company (needs `seller`); the caller becomes owner |
+| GET    | `/companies`, `/companies/:id`    | The user's companies |
+| PUT    | `/companies/:id`                  | Update (owner or manager); the CNPJ is immutable |
+| GET/POST/DELETE | `/companies/:id/members` | List, add by email, remove (owner only) |
+| GET    | `/admin/companies`                | List companies (admin) |
+| PATCH  | `/admin/companies/:id/verification` | Verify or revoke a company (admin) |
+
+`/books` and `/stats` need the `reader` role. Registration accepts an optional `roles`
+list (`reader`, `buyer`, `seller`); the default is `["reader"]`.
+
+Errors are returned as
+`{ "error": string, "code": string, "context": string, "requestId": string, "details"?: unknown }`.
+`context` names the module that handled the request and `requestId` matches the
+`X-Request-Id` header and the server logs.
 
 ## Testing
 
@@ -167,18 +189,29 @@ such as `smoke`), and follow the links in the run summary.
 It needs a repository secret named `E2E_DISPATCH_TOKEN`: a fine-grained personal
 access token with **Actions: read and write** on the two test repositories.
 
+## Architecture
+
+A modular monolith organised in bounded contexts (`identity`, `library`, later `catalog`,
+`marketplace`, `payments`) whose boundaries are enforced by ESLint, with structured logs
+and a request id on every response. See [docs/architecture.md](docs/architecture.md).
+
 ## Project structure
 
 ```
 src/
   config/       env, database and swagger setup
-  middlewares/  auth, request validation, error handling
-  models/       TypeORM entities (User, Book)
-  modules/      feature modules (auth, books, stats): controller + service + routes + schemas
-  shared/       cross-cutting helpers (errors, asyncHandler, jwt)
+  contexts/
+    identity/   auth, /me, companies (routes, services, schemas, models)
+    library/    books and stats (routes, services, schemas, models)
+  middlewares/  auth, role guard, request validation, error handling
+  migrations/   versioned TypeORM migrations
+  shared/       errors, jwt, roles, logger, request context, asyncHandler
   app.ts        Express app wiring
   server.ts     entry point
-tests/          API tests (Jest + Supertest)
+tests/
+  unit/         fast tests with mocked persistence (no database)
+  api/          API tests (Jest + Supertest) against PostgreSQL
+  migrations/   migration tests against scratch databases
 ```
 
 ## Frontend

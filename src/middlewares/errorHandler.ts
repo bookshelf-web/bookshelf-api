@@ -8,6 +8,10 @@ interface ErrorBody {
   error: string;
   code: string;
   details?: unknown;
+  /** Bounded context that handled the request (identity, library, ...). */
+  context?: string;
+  /** Correlates this response with the server logs (also sent as `X-Request-Id`). */
+  requestId?: string;
 }
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
@@ -16,22 +20,30 @@ export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json({
     error: `Route not found: ${req.method} ${req.originalUrl}`,
     code: 'ROUTE_NOT_FOUND',
+    context: 'platform',
+    requestId: String(req.id),
   });
 };
 
 export const errorHandler = (
   error: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ): void => {
   const body = toErrorBody(error);
+  const status = statusFor(error, body);
 
-  if (body.code === 'INTERNAL_ERROR') {
-    console.error('Unhandled error:', error);
+  body.context = res.locals.context ?? 'platform';
+  body.requestId = String(req.id);
+
+  // Expected client errors are already logged (as warnings) by the request logger;
+  // only unexpected failures need the stack trace.
+  if (status >= 500) {
+    req.log.error({ err: error, code: body.code }, 'Unhandled error');
   }
 
-  res.status(statusFor(error, body)).json(body);
+  res.status(status).json(body);
 };
 
 function statusFor(error: unknown, body: ErrorBody): number {

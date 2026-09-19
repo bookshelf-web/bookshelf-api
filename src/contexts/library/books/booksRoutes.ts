@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authMiddleware } from '../../middlewares/authMiddleware';
-import { validate } from '../../middlewares/validate';
-import { asyncHandler } from '../../shared/asyncHandler';
+import { authMiddleware } from '../../../middlewares/authMiddleware';
+import { validate } from '../../../middlewares/validate';
+import { asyncHandler } from '../../../shared/asyncHandler';
 import { booksController } from './booksController';
 import {
   bookIdParamsSchema,

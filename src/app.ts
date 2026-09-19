@@ -5,12 +5,15 @@ import { env } from './config/env';
 import routes from './routes';
 import { setupSwagger } from './config/swagger';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
+import { requestLogger } from './shared/requestContext';
 
 const app = express();
 
 // Render (and most PaaS) serve the app behind a reverse proxy; without this
 // express-rate-limit rejects the forwarded client IP.
 app.set('trust proxy', 1);
+
+app.use(requestLogger);
 
 app.use(helmet());
 

@@ -8,8 +8,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { BookStatus } from '../types/books';
-import { User } from './User';
+import { BookStatus } from '../types';
 
 @Entity('books')
 @Index('idx_books_user_id', ['userId'])
@@ -69,9 +68,9 @@ export class Book {
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @ManyToOne(() => User, user => user.books)
+  @ManyToOne('User', 'books')
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: unknown;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
