@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   migrations run on startup, replacing the `DB_SYNC` flag (removed). The baseline
   is idempotent for existing databases.
 - Indexes on `books` (`user_id`, `status`, `title`, `author`).
+- `keep-warm` workflow that pings the hosted API, database and frontend on weekdays.
+- `.github/rulesets/protect-main.json` to import as a branch ruleset.
+
+### Fixed
+
+- `PUT /api/books/:id` now clears optional fields (rating, notes, ...) when they are sent as
+  `null`; previously the update was silently ignored.
 
 ### Security
 

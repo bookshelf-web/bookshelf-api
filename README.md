@@ -106,6 +106,10 @@ talks to Postgres directly, so on startup it enables Row Level Security on its t
 revokes access for the `anon`/`authenticated` roles (a no-op on plain Postgres). Nothing
 to configure; only the `postgres` connection in `DATABASE_URL` can read the data.
 
+The free tiers used by the demo go idle (Render spins the API down, Supabase pauses inactive
+projects). [`keep-warm.yml`](.github/workflows/keep-warm.yml) pings the API, the database and the
+frontend every 14 minutes on weekdays to keep them available.
+
 ## Scripts
 
 | Script              | Description                        |
@@ -193,6 +197,9 @@ request. Run `npm run lint`, `npm run typecheck` and `npm test` before submittin
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 Notable changes are tracked in [CHANGELOG.md](CHANGELOG.md); to report a security
 issue, see [SECURITY.md](SECURITY.md).
+
+Repository maintainers can import [`.github/rulesets/protect-main.json`](.github/rulesets/protect-main.json)
+(*Settings → Rules → Rulesets → Import*) to block force pushes to, and deletion of, `main`.
 
 ## License
 

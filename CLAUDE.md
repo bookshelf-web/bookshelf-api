@@ -94,4 +94,7 @@ CI (`.github/workflows/ci.yml`) runs lint + typecheck + tests (Postgres service,
 - The `gh` CLI here is authenticated as a **read-only** account; it cannot open
   PRs, merge, or create Releases on `bookshelf-web/bookshelf-api`. Pushes work
   over SSH.
-- `main` currently has no branch protection (ruleset setup is pending).
+- `main` protection is defined in `.github/rulesets/protect-main.json` but has to be imported by a repo
+  admin (*Settings → Rules → Rulesets → Import*); the `gh` account here cannot apply it.
+- Schema changes need a migration in `src/migrations` (`npm run migration:generate`); `DB_SYNC` no longer
+  exists. Migrations run on startup outside `NODE_ENV=test`.
