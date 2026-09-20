@@ -143,16 +143,12 @@ describeMigrations('database migrations', () => {
     const db = await createScratchDatabase();
     await db.runMigrations();
 
-    await db.undoLastMigration();
-    await db.undoLastMigration();
-    await db.undoLastMigration();
-    await db.undoLastMigration();
-    await db.undoLastMigration();
+    for (let i = 0; i < 6; i++) await db.undoLastMigration();
 
     const tables: { table_name: string }[] = await db.query(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'public'
-         AND table_name IN ('users', 'books', 'companies', 'company_members', 'audit_logs', 'catalog_books', 'catalog_revisions')`,
+         AND table_name IN ('users', 'books', 'companies', 'company_members', 'audit_logs', 'catalog_books', 'catalog_revisions', 'listings', 'orders', 'order_items', 'payment_charges')`,
     );
     expect(tables).toEqual([]);
   });
