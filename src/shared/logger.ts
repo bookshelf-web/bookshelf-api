@@ -10,7 +10,16 @@ export const logger = pino({
   level: env.NODE_ENV === 'test' ? 'silent' : env.LOG_LEVEL,
   base: { service: 'bookshelf-api' },
   redact: {
-    paths: ['req.headers.authorization', 'req.headers.cookie', 'password', '*.password'],
+    paths: [
+      'req.headers.authorization',
+      'req.headers.cookie',
+      'password',
+      '*.password',
+      'cardNumber',
+      '*.cardNumber',
+      'cvv',
+      '*.cvv',
+    ],
     censor: '[redacted]',
   },
 });

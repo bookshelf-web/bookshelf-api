@@ -109,6 +109,14 @@ describe('env', () => {
     );
   });
 
+  it('enables simulated payments outside production, and in production only when opted in', () => {
+    expect(loadEnv().env.simulatedPaymentsEnabled).toBe(true);
+    expect(loadEnv({ NODE_ENV: 'production' }).env.simulatedPaymentsEnabled).toBe(false);
+    expect(
+      loadEnv({ NODE_ENV: 'production', ALLOW_SIMULATED_PAYMENTS: 'true' }).env.simulatedPaymentsEnabled,
+    ).toBe(true);
+  });
+
   it('warns about a short JWT secret in production only', () => {
     loadEnv({ NODE_ENV: 'production', JWT_SECRET: 'short' });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('JWT_SECRET'));
