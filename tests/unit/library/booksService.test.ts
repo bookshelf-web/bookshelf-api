@@ -56,6 +56,7 @@ const catalogBook = (overrides: object = {}) => ({
   status: CatalogBookStatus.ACTIVE,
   reviewStatus: CatalogReviewStatus.PENDING_REVIEW,
   createdBy: 'u1',
+  updatedAt: new Date('2026-01-01'),
   ...overrides,
 });
 

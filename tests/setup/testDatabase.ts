@@ -24,6 +24,8 @@ export const cleanupTestDatabase = async (): Promise<void> => {
       await AppDataSource.query('TRUNCATE TABLE companies RESTART IDENTITY CASCADE');
       await AppDataSource.query('TRUNCATE TABLE audit_logs RESTART IDENTITY CASCADE');
       await AppDataSource.query('TRUNCATE TABLE catalog_books RESTART IDENTITY CASCADE');
+      // The test schema has no FK from revisions to books, so they are not cascaded.
+      await AppDataSource.query('TRUNCATE TABLE catalog_revisions RESTART IDENTITY CASCADE');
 
       // wait for the truncate to commit
       await new Promise(resolve => setTimeout(resolve, 10));

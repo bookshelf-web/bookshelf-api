@@ -81,7 +81,8 @@ export function toBookView(book: Book, catalog: CatalogBook, revision?: CatalogR
     startedAt: book.startedAt,
     finishedAt: book.finishedAt,
     createdAt: book.createdAt,
-    updatedAt: book.updatedAt,
+    // The entry also changes when the catalog data behind it does.
+    updatedAt: book.updatedAt > catalog.updatedAt ? book.updatedAt : catalog.updatedAt,
     catalog: { status: catalog.status, reviewStatus: catalog.reviewStatus },
     pendingRevision: revision ? { id: revision.id, changes: revision.changes } : null,
   };

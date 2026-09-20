@@ -137,12 +137,22 @@ describe('POST /api/books', () => {
       expect(response1.body.book.isbn).not.toBe(response2.body.book.isbn);
     });
 
-    it('allows multiple books without an ISBN', async () => {
-      const response1 = await apiClient.createBook(TestDataBuilder.createBook({ isbn: undefined }));
-      const response2 = await apiClient.createBook(TestDataBuilder.createBook({ isbn: undefined }));
+    it('allows multiple different books without an ISBN', async () => {
+      const response1 = await apiClient.createBook(TestDataBuilder.createBook({ isbn: undefined, title: 'First Book' }));
+      const response2 = await apiClient.createBook(TestDataBuilder.createBook({ isbn: undefined, title: 'Second Book' }));
 
       expect(response1.status).toBe(201);
       expect(response2.status).toBe(201);
+    });
+
+    it('treats a book without an ISBN that has the same title, author, publisher, year and edition as the same book', async () => {
+      const book = TestDataBuilder.createBook({ isbn: undefined, title: 'Same Book', author: 'Same Author' });
+
+      await apiClient.createBook(book);
+      const again = await apiClient.createBook(book);
+
+      expect(again.status).toBe(409);
+      expect(again.body.code).toBe('BOOK_ALREADY_IN_LIBRARY');
     });
   });
 
