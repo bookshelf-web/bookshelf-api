@@ -26,7 +26,8 @@ src/
   contexts/
     identity/     accounts, roles, companies, members, company verification
     library/      a reader's personal shelf: books, reading status, stats
-    catalog/      (planned) shared books keyed by ISBN, with admin moderation
+    catalog/      shared books keyed by ISBN, with admin moderation and proposed edits
+    audit/        append-only log of admin and moderation actions
     marketplace/  (planned) listings, cart, orders
     payments/     (planned) payment gateway port + simulated gateway
   shared/         cross-cutting kernel: errors, jwt, roles, logger, request context
@@ -72,18 +73,25 @@ its owner. Members are `owner` / `manager` / `staff`: owners and managers edit t
 only owners manage members. Non-members get `404` so ids cannot be probed. An admin
 **verifies** a company; the marketplace will require verification to publish listings.
 
-## Planned: catalog with moderation
+## Catalog and moderation
 
-The ISBN is the identity of a book, so a book exists **once**, not once per user
-(today `books.isbn` is unique across all users, which is the wrong shape and is what the
-catalog replaces).
+The ISBN is the identity of a book, so a book exists **once** in the shared catalog, no matter
+how many readers shelve it (and, later, how many sebos sell it).
 
-- **Catalog book**: one row per ISBN (normalised to ISBN-13). Library entries and sebo
-  listings reference it.
-- **First registration** of an ISBN is **approved automatically** so the reader is not
-  blocked, and is flagged **pending review** for an admin, who confirms it or takes it down.
-- **Edits** to an existing catalog book never apply directly: they become a **revision**
-  (proposed changes + proposer) that an admin approves or rejects, with an audit trail.
+- **Catalog book**: one row per ISBN-13 (ISBN-10 and hyphenated forms are validated and normalised).
+  A book without an ISBN is matched by a normalised title/author/publisher/year/edition key, so
+  the same book is not registered twice and different editions stay apart.
+- **Library entries** point at the catalog book and keep only what is personal (status, rating,
+  notes, dates). Title, author, ISBN and the rest are read from the catalog.
+- **First registration** is **approved automatically** so the reader is never blocked, and is
+  flagged `pending_review` for an admin, who confirms it or takes it down (`hidden`).
+- **Edits** to descriptive fields never apply straight away: they become a **revision** that an
+  admin approves or rejects. One exception keeps the flow natural: the creator can fix their own
+  fresh registration directly until an admin has reviewed it and while nobody else shelves it.
+  Personal fields (rating, notes, status) always apply at once.
+- Every moderation action (confirm, hide, edit, approve, reject) is written to the audit log.
+- Existing library books were moved into the catalog by a migration (merged by ISBN-13, marked as
+  reviewed). Books with an invalid ISBN or none are kept as separate entries.
 - Listings (price, condition, quantity, seller) belong to the marketplace, not the catalog.
 
 ## Planned: payments

@@ -6,6 +6,8 @@ import { Book } from '../contexts/library/models/Book';
 import { Company } from '../contexts/identity/models/Company';
 import { CompanyMember } from '../contexts/identity/models/CompanyMember';
 import { AuditLog } from '../contexts/audit/models/AuditLog';
+import { CatalogBook } from '../contexts/catalog/models/CatalogBook';
+import { CatalogRevision } from '../contexts/catalog/models/CatalogRevision';
 
 // Hosted providers (Supabase/Render) give a single DATABASE_URL and require SSL.
 const connection = env.DATABASE_URL
@@ -26,7 +28,7 @@ export const AppDataSource = new DataSource({
   synchronize: env.NODE_ENV === 'test',
   migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
   logging: env.NODE_ENV === 'development',
-  entities: [User, Book, Company, CompanyMember, AuditLog],
+  entities: [User, Book, Company, CompanyMember, AuditLog, CatalogBook, CatalogRevision],
 });
 
 // Supabase exposes every `public` table through its REST API using the public
@@ -40,7 +42,7 @@ DECLARE
   tbl text;
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-    FOREACH tbl IN ARRAY ARRAY['users', 'books', 'companies', 'company_members', 'audit_logs', 'migrations'] LOOP
+    FOREACH tbl IN ARRAY ARRAY['users', 'books', 'companies', 'company_members', 'audit_logs', 'catalog_books', 'catalog_revisions', 'migrations'] LOOP
       IF to_regclass('public.' || tbl) IS NOT NULL THEN
         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', tbl);
         EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon, authenticated', tbl);

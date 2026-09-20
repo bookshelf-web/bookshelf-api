@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   accounts, with guards (no self-suspension, the last active admin is protected) and an **audit log**
   (`/api/admin/audit-logs`) that also records company verification. Users can change their own name and
   password (`/api/me/profile`, `/api/me/password`). Suspended accounts cannot sign in.
+- **Shared catalog** (`/api/catalog`, `/api/admin/catalog`): a book exists once (ISBN-13; books without
+  ISBN are matched by metadata). Library entries reference it and keep only personal data. The first
+  registration is approved at once and flagged for admin review; other edits become revisions an admin
+  approves or rejects. **Breaking:** ISBNs are validated (check digit) and normalised to ISBN-13, the same
+  ISBN by two readers now shares one catalog book instead of conflicting, and `PUT /api/books/:id` may
+  answer with `pendingRevision` instead of applying descriptive changes. Existing books were migrated.
 - **Companies**: `POST/GET/PUT /api/companies`, member management, and admin verification
   (`/api/admin/companies`). CNPJ is validated and unique.
 - **Bounded contexts** (`identity`, `library`) with ESLint-enforced boundaries, structured

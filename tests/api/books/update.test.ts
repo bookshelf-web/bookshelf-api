@@ -181,8 +181,7 @@ describe('PUT /api/books/:id', () => {
       const response = await apiClient.updateBook(bookId, { isbn: book2ISBN });
 
       expect(response.status).toBe(409);
-      expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toMatch(/isbn.*already registered/i);
+      expect(response.body.code).toBe('CATALOG_DUPLICATE');
     });
 
     it('allows keeping the same ISBN', async () => {

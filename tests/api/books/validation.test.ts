@@ -115,13 +115,27 @@ describe('Books - additional validations', () => {
   });
 
   describe('ISBN', () => {
-    it('accepts a valid ISBN-10', async () => {
+    it('accepts a valid ISBN-10 and stores it as ISBN-13', async () => {
       const bookData = TestDataBuilder.createBook({ isbn: '0132350882' });
 
       const response = await apiClient.createBook(bookData);
 
       expect(response.status).toBe(201);
-      expect(response.body.book.isbn).toBe('0132350882');
+      expect(response.body.book.isbn).toBe('9780132350884');
+    });
+
+    it('accepts an ISBN with hyphens', async () => {
+      const response = await apiClient.createBook(TestDataBuilder.createBook({ isbn: '978-0-13-235088-4' }));
+
+      expect(response.status).toBe(201);
+      expect(response.body.book.isbn).toBe('9780132350884');
+    });
+
+    it.each(['123', '9781234567890', 'not-an-isbn', '0132350883'])('rejects the invalid ISBN %s', async isbn => {
+      const response = await apiClient.createBook(TestDataBuilder.createBook({ isbn }));
+
+      expect(response.status).toBe(400);
+      expect(response.body.code).toBe('INVALID_ISBN');
     });
 
     it('accepts a valid ISBN-13', async () => {

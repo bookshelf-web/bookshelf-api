@@ -10,47 +10,32 @@ import {
 } from 'typeorm';
 import { BookStatus } from '../types';
 
+/**
+ * A reader's shelf entry. What the book *is* (title, author, ISBN...) lives in the shared
+ * catalog; this row only holds what is personal to the reader.
+ */
 @Entity('books')
 @Index('idx_books_user_id', ['userId'])
 @Index('idx_books_status', ['status'])
-@Index('idx_books_title', ['title'])
-@Index('idx_books_author', ['author'])
+@Index('idx_books_catalog_book_id', ['catalogBookId'])
+@Index('uq_books_user_catalog', ['userId', 'catalogBookId'], { unique: true })
 export class Book {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  title!: string;
+  @Column({ name: 'catalog_book_id', type: 'uuid' })
+  catalogBookId!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  author!: string;
-
-  @Column({ type: 'varchar', length: 20, nullable: true, unique: true })
-  isbn?: string | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  publisher?: string | null;
-
-  @Column({ type: 'int', nullable: true, name: 'published_year' })
-  publishedYear?: number | null;
-
-  @Column({ type: 'int', nullable: true })
-  pages?: number | null;
-
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  language?: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  description?: string | null;
+  // Related by entity name so this context never imports the catalog's classes.
+  @ManyToOne('CatalogBook', { nullable: false })
+  @JoinColumn({ name: 'catalog_book_id' })
+  catalogBook!: unknown;
 
   @Column({ type: 'int', nullable: true })
   rating?: number | null;
 
   @Column({ type: 'text', nullable: true })
   notes?: string | null;
-
-  @Column({ type: 'varchar', length: 500, nullable: true, name: 'cover_url' })
-  coverUrl?: string | null;
 
   @Column({
     type: 'enum',

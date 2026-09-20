@@ -156,6 +156,8 @@ Accounts, roles and companies (see [docs/architecture.md](docs/architecture.md))
 | GET    | `/admin/users`, `/admin/users/:id` | Search/list and read accounts (admin) |
 | PATCH  | `/admin/users/:id`                | Edit name, email, roles or status (admin); last admin and self-suspension are protected |
 | GET    | `/admin/audit-logs`               | Who changed what (admin) |
+| GET    | `/catalog/books`, `/catalog/books/:id` | Search the shared catalog (any signed-in user) |
+| GET/PATCH/POST | `/admin/catalog/...`      | Moderation: review queue, direct edits, hide/restore, decide proposed edits (admin) |
 | GET    | `/admin/companies`                | List companies (admin) |
 | PATCH  | `/admin/companies/:id/verification` | Verify or revoke a company (admin) |
 

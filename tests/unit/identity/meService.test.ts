@@ -119,7 +119,7 @@ describe('MeService.changePassword', () => {
 
     await expect(
       MeService.changePassword('u1', { currentPassword: 'guess', newPassword: 'new-secret' }),
-    ).rejects.toMatchObject({ code: 'INVALID_CURRENT_PASSWORD', statusCode: 401 });
+    ).rejects.toMatchObject({ code: 'INVALID_CURRENT_PASSWORD', statusCode: 400 });
     expect(users.update).not.toHaveBeenCalled();
   });
 

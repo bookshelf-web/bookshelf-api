@@ -48,7 +48,7 @@ describe('GET /api/books/:id', () => {
       const bookData = TestDataBuilder.createBook({
         title: 'Complete Book',
         author: 'Author Name',
-        isbn: '9781234567890',
+        isbn: '9781234567897',
         publisher: 'Publisher',
         publishedYear: 2020,
         pages: 300,

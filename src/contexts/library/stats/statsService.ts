@@ -1,4 +1,5 @@
 import { AppDataSource } from '../../../config/database';
+import type { CatalogBook } from '../../catalog';
 import { Book } from '../models/Book';
 import { BookStatus } from '../types';
 
@@ -14,14 +15,14 @@ export class StatsService {
   static async overview(userId: string): Promise<Overview> {
     const books = await AppDataSource.getRepository(Book).find({
       where: { userId },
-      select: ['status', 'rating', 'pages'],
+      relations: { catalogBook: true },
     });
 
     const ratings = books
       .map(book => book.rating)
       .filter((value): value is number => typeof value === 'number');
 
-    const totalPages = books.reduce((sum, book) => sum + (book.pages ?? 0), 0);
+    const totalPages = books.reduce((sum, book) => sum + ((book.catalogBook as CatalogBook).pages ?? 0), 0);
 
     return {
       total: books.length,

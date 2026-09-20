@@ -57,7 +57,7 @@ router.patch(
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200: { description: Password changed }
- *       401: { description: Current password is incorrect }
+ *       400: { description: Invalid input, or the current password is incorrect }
  */
 router.patch(
   '/password',

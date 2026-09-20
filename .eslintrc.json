@@ -56,6 +56,14 @@
             "message": "The identity context may only use the audit context through its index.ts public API."
           },
           {
+            "target": "./src/contexts/identity",
+            "from": "./src/contexts/catalog",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The identity context may only use the catalog context through its index.ts public API."
+          },
+          {
             "target": "./src/contexts/library",
             "from": "./src/contexts/identity",
             "except": [
@@ -72,6 +80,14 @@
             "message": "The library context may only use the audit context through its index.ts public API."
           },
           {
+            "target": "./src/contexts/library",
+            "from": "./src/contexts/catalog",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The library context may only use the catalog context through its index.ts public API."
+          },
+          {
             "target": "./src/contexts/audit",
             "from": "./src/contexts/identity",
             "except": [
@@ -86,6 +102,38 @@
               "./index.ts"
             ],
             "message": "The audit context may only use the library context through its index.ts public API."
+          },
+          {
+            "target": "./src/contexts/audit",
+            "from": "./src/contexts/catalog",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The audit context may only use the catalog context through its index.ts public API."
+          },
+          {
+            "target": "./src/contexts/catalog",
+            "from": "./src/contexts/identity",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The catalog context may only use the identity context through its index.ts public API."
+          },
+          {
+            "target": "./src/contexts/catalog",
+            "from": "./src/contexts/library",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The catalog context may only use the library context through its index.ts public API."
+          },
+          {
+            "target": "./src/contexts/catalog",
+            "from": "./src/contexts/audit",
+            "except": [
+              "./index.ts"
+            ],
+            "message": "The catalog context may only use the audit context through its index.ts public API."
           }
         ]
       }

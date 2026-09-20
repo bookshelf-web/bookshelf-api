@@ -61,6 +61,7 @@ describeMigrations('database migrations', () => {
       'AddBookIndexes1789862400000',
       'AddRolesAndCompanies1789948800000',
       'AddUserStatusAndAuditLog1790035200000',
+      'AddCatalog1790121600000',
     ]);
 
     for (const metadata of db.entityMetadatas) {
@@ -91,10 +92,50 @@ describeMigrations('database migrations', () => {
     const initSql = fs.readFileSync(path.join(__dirname, '../../scripts/init-db.sql'), 'utf8');
     await db.query(initSql);
 
-    await expect(db.runMigrations()).resolves.toHaveLength(4);
+    await expect(db.runMigrations()).resolves.toHaveLength(5);
 
     const rows = await db.query(`SELECT count(*)::int AS total FROM books`);
     expect(rows[0].total).toBe(0);
+  });
+
+  it('moves existing library books into the catalog', async () => {
+    const db = await createScratchDatabase();
+    const initSql = fs.readFileSync(path.join(__dirname, '../../scripts/init-db.sql'), 'utf8');
+    await db.query(initSql);
+    const [{ id: userA }] = await db.query(
+      `INSERT INTO users (name, email, password) VALUES ('A', 'a@test.com', 'x') RETURNING id`,
+    );
+    const [{ id: userB }] = await db.query(
+      `INSERT INTO users (name, email, password) VALUES ('B', 'b@test.com', 'x') RETURNING id`,
+    );
+    // ISBN-13 (merged by ISBN), invalid ISBN, and no ISBN: the last two stay separate entries.
+    await db.query(
+      `INSERT INTO books (user_id, title, author, isbn, pages) VALUES
+         ($1, 'Clean Code', 'Robert Martin', '9780132350884', 464),
+         ($1, 'Odd ISBN', 'Someone', '123', NULL),
+         ($2, 'No ISBN', 'Someone Else', NULL, 10),
+         ($2, 'No ISBN', 'Someone Else', NULL, 10)`,
+      [userA, userB],
+    );
+
+    await db.runMigrations();
+
+    const catalog: { dedupe_key: string; isbn: string | null; review_status: string }[] = await db.query(
+      `SELECT dedupe_key, isbn, review_status FROM catalog_books ORDER BY dedupe_key`,
+    );
+    expect(catalog).toHaveLength(4);
+    expect(catalog.filter(row => row.isbn === '9780132350884')).toHaveLength(1);
+    expect(catalog.filter(row => row.dedupe_key.startsWith('legacy:'))).toHaveLength(3);
+    // Existing books are trusted: only new registrations wait for review.
+    expect(catalog.every(row => row.review_status === 'reviewed')).toBe(true);
+
+    const unlinked = await db.query(`SELECT count(*)::int AS total FROM books WHERE catalog_book_id IS NULL`);
+    expect(unlinked[0].total).toBe(0);
+    const linked: { title: string }[] = await db.query(
+      `SELECT c.title FROM books b JOIN catalog_books c ON c.id = b.catalog_book_id WHERE b.user_id = $1`,
+      [userA],
+    );
+    expect(linked.map(row => row.title).sort()).toEqual(['Clean Code', 'Odd ISBN']);
   });
 
   it('can be reverted', async () => {
@@ -105,11 +146,12 @@ describeMigrations('database migrations', () => {
     await db.undoLastMigration();
     await db.undoLastMigration();
     await db.undoLastMigration();
+    await db.undoLastMigration();
 
     const tables: { table_name: string }[] = await db.query(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'public'
-         AND table_name IN ('users', 'books', 'companies', 'company_members', 'audit_logs')`,
+         AND table_name IN ('users', 'books', 'companies', 'company_members', 'audit_logs', 'catalog_books', 'catalog_revisions')`,
     );
     expect(tables).toEqual([]);
   });

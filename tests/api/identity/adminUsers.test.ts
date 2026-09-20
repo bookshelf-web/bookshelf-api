@@ -222,7 +222,7 @@ describe('admin: users', () => {
       const { api, email, password } = await signUp();
 
       const wrong = await api.call('patch', '/me/password', { currentPassword: 'nope', newPassword: 'brand-new-1' });
-      expect(wrong.status).toBe(401);
+      expect(wrong.status).toBe(400);
       expect(wrong.body.code).toBe('INVALID_CURRENT_PASSWORD');
 
       const same = await api.call('patch', '/me/password', { currentPassword: password, newPassword: password });

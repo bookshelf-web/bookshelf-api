@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../../config/database';
 import bcrypt from 'bcryptjs';
-import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../shared/errors';
+import { BadRequestError, NotFoundError } from '../../../shared/errors';
 import { normalizeRoles, Role } from '../../../shared/roles';
 import { CompaniesService, CompanyView } from '../companies/companiesService';
 import { issue, PublicUser, toPublicUser, AuthResult, withAdminIfAllowlisted } from '../auth/authService';
@@ -36,7 +36,8 @@ export class MeService {
       throw new NotFoundError('User not found', 'USER_NOT_FOUND');
     }
     if (!(await bcrypt.compare(currentPassword, user.password))) {
-      throw new UnauthorizedError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
+      // 400, not 401: the frontend treats any 401 as an expired session and signs the user out.
+      throw new BadRequestError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
     }
     if (currentPassword === newPassword) {
       throw new BadRequestError('The new password must be different', 'PASSWORD_UNCHANGED');

@@ -15,6 +15,6 @@ export const logger = pino({
   },
 });
 
-export type ContextName = 'platform' | 'identity' | 'library' | 'audit' | 'marketplace' | 'payments';
+export type ContextName = 'platform' | 'identity' | 'library' | 'audit' | 'catalog' | 'marketplace' | 'payments';
 
 export const contextLogger = (context: ContextName) => logger.child({ context });
