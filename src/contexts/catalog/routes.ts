@@ -93,6 +93,7 @@ adminCatalogRoutes.use(withContext('catalog'), authMiddleware, requireRole(Role.
  *     parameters:
  *       - { in: query, name: review, schema: { type: string, enum: [pending_review, reviewed] } }
  *       - { in: query, name: status, schema: { type: string, enum: [active, hidden] } }
+ *       - { in: query, name: search, schema: { type: string } }
  *     responses:
  *       200: { description: A page of catalog books, oldest first }
  */

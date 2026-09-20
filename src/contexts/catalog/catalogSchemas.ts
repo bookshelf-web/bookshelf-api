@@ -15,6 +15,7 @@ export const catalogSearchQuerySchema = z.object({
 });
 
 export const reviewBooksQuerySchema = z.object({
+  search: z.string().trim().min(1).optional(),
   review: z.nativeEnum(CatalogReviewStatus).optional(),
   status: z.nativeEnum(CatalogBookStatus).optional(),
   page,

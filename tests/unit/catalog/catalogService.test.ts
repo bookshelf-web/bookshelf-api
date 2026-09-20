@@ -338,6 +338,14 @@ describe('moderation', () => {
     expect(qb.orderBy).toHaveBeenCalledWith('book.createdAt', 'ASC');
   });
 
+  it('searches the review queue by title, author or ISBN', async () => {
+    qb.getManyAndCount.mockResolvedValue([[stored()], 1]);
+
+    await CatalogService.listBooksForReview({ search: 'clean', page: 1, limit: 20 });
+
+    expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('book.isbn LIKE :search'), { search: '%clean%' });
+  });
+
   it('lists revisions together with their book', async () => {
     revisions.findAndCount.mockResolvedValue([[revision()], 1]);
     qb.getMany.mockResolvedValue([stored()]);

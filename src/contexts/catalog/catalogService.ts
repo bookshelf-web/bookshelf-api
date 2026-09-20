@@ -212,10 +212,22 @@ export class CatalogService {
 
   // ─── Moderation (admin) ──────────────────────────────────────────────────
 
-  static async listBooksForReview(params: { review?: CatalogReviewStatus; status?: CatalogBookStatus; page: number; limit: number }) {
+  static async listBooksForReview(params: {
+    review?: CatalogReviewStatus;
+    status?: CatalogBookStatus;
+    search?: string;
+    page: number;
+    limit: number;
+  }) {
     const qb = this.books.createQueryBuilder('book');
     if (params.review) qb.andWhere('book.reviewStatus = :review', { review: params.review });
     if (params.status) qb.andWhere('book.status = :status', { status: params.status });
+    if (params.search) {
+      qb.andWhere(
+        '(LOWER(book.title) LIKE LOWER(:search) OR LOWER(book.author) LIKE LOWER(:search) OR book.isbn LIKE :search)',
+        { search: `%${params.search}%` },
+      );
+    }
     qb.orderBy('book.createdAt', 'ASC')
       .skip((params.page - 1) * params.limit)
       .take(params.limit);

@@ -135,6 +135,20 @@ describe('shared catalog', () => {
       expect(after.body.books.map((b: { id: string }) => b.id)).not.toContain(id);
     });
 
+    it('can search the review queue by title, author or ISBN', async () => {
+      const admin = await signUp({ email: ADMIN_EMAIL });
+      const ana = await signUp();
+      const isbn = TestDataBuilder.generateUniqueISBN();
+      await shelve(ana.api, { isbn, title: 'Needle In Queue' });
+      await shelve(ana.api, { title: 'Something Else' });
+
+      const byTitle = await admin.api.call('get', '/admin/catalog/books?review=pending_review&search=needle');
+      const byIsbn = await admin.api.call('get', `/admin/catalog/books?review=pending_review&search=${isbn}`);
+
+      expect(byTitle.body.books).toHaveLength(1);
+      expect(byIsbn.body.books[0].title).toBe('Needle In Queue');
+    });
+
     it('rejects an invalid ISBN', async () => {
       const ana = await signUp();
 
