@@ -62,6 +62,7 @@ describeMigrations('database migrations', () => {
       'AddRolesAndCompanies1789948800000',
       'AddUserStatusAndAuditLog1790035200000',
       'AddCatalog1790121600000',
+      'AddMarketplaceAndPayments1790208000000',
     ]);
 
     for (const metadata of db.entityMetadatas) {
@@ -92,7 +93,7 @@ describeMigrations('database migrations', () => {
     const initSql = fs.readFileSync(path.join(__dirname, '../../scripts/init-db.sql'), 'utf8');
     await db.query(initSql);
 
-    await expect(db.runMigrations()).resolves.toHaveLength(5);
+    await expect(db.runMigrations()).resolves.toHaveLength(6);
 
     const rows = await db.query(`SELECT count(*)::int AS total FROM books`);
     expect(rows[0].total).toBe(0);

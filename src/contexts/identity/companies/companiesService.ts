@@ -226,6 +226,14 @@ export class CompaniesService {
     return companies.map(company => toCompanyView(company));
   }
 
+  /** A company sells only once an admin verified it, and only through its own members. */
+  static async assertCanSell(userId: string, companyId: string): Promise<void> {
+    const membership = await this.requireMembership(userId, companyId);
+    if (!membership.company.verified) {
+      throw new ForbiddenError('The company has not been verified yet', 'COMPANY_NOT_VERIFIED');
+    }
+  }
+
   /** 404 (not 403) for non-members so company ids cannot be probed. */
   private static async requireMembership(
     userId: string,

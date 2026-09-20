@@ -3,7 +3,7 @@ describe('getPaymentGateway', () => {
     jest.resetModules();
     jest.doMock('../../../src/config/env', () => ({ env: { simulatedPaymentsEnabled } }));
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('../../../src/contexts/payments') as typeof import('../../../src/contexts/payments');
+    return require('../../../src/contexts/payments/guard') as typeof import('../../../src/contexts/payments/guard');
   };
 
   afterEach(() => jest.dontMock('../../../src/config/env'));
