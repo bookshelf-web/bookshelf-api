@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../../../config/database';
 import { env } from '../../../config/env';
-import { ConflictError, UnauthorizedError } from '../../../shared/errors';
+import { ConflictError, ForbiddenError, UnauthorizedError } from '../../../shared/errors';
 import { signAuthToken } from '../../../shared/jwt';
 import { DEFAULT_ROLES, normalizeRoles, Role } from '../../../shared/roles';
-import { User } from '../models/User';
+import { User, UserStatus } from '../models/User';
 import { LoginInput, RegisterInput } from './authSchemas';
 
 const BCRYPT_ROUNDS = 10;
@@ -14,6 +14,7 @@ export interface PublicUser {
   name: string;
   email: string;
   roles: Role[];
+  status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,7 +50,7 @@ export class AuthService {
   static async login({ email, password }: LoginInput): Promise<AuthResult> {
     const user = await this.repository.findOne({
       where: { email },
-      select: ['id', 'name', 'email', 'password', 'roles', 'createdAt', 'updatedAt'],
+      select: ['id', 'name', 'email', 'password', 'roles', 'status', 'createdAt', 'updatedAt'],
     });
 
     // Same error for unknown email and wrong password so the endpoint does not
@@ -57,6 +58,12 @@ export class AuthService {
     const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
     if (!user || !passwordMatches) {
       throw new UnauthorizedError('Invalid credentials', 'INVALID_CREDENTIALS');
+    }
+
+    // Checked after the password so the status of an account is not revealed to anyone who
+    // does not know its credentials.
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenError('This account is suspended', 'ACCOUNT_SUSPENDED');
     }
 
     // Lets an existing account be promoted by adding its email to ADMIN_EMAILS.
@@ -82,6 +89,7 @@ export function toPublicUser(user: User): PublicUser {
     name: user.name,
     email: user.email,
     roles: user.roles,
+    status: user.status,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

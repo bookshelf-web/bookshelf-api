@@ -1,10 +1,11 @@
 import { AppDataSource } from '../../../config/database';
-import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import bcrypt from 'bcryptjs';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../shared/errors';
 import { normalizeRoles, Role } from '../../../shared/roles';
 import { CompaniesService, CompanyView } from '../companies/companiesService';
 import { issue, PublicUser, toPublicUser, AuthResult, withAdminIfAllowlisted } from '../auth/authService';
 import { User } from '../models/User';
-import { UpdateRolesInput } from './meSchemas';
+import { ChangePasswordInput, UpdateProfileInput, UpdateRolesInput } from './meSchemas';
 
 export interface MeView {
   user: PublicUser;
@@ -19,6 +20,28 @@ export class MeService {
   static async getProfile(userId: string): Promise<MeView> {
     const user = await this.requireUser(userId);
     return { user: toPublicUser(user), companies: await CompaniesService.listMine(userId) };
+  }
+
+  static async updateProfile(userId: string, { name }: UpdateProfileInput): Promise<AuthResult> {
+    const user = await this.requireUser(userId);
+    user.name = name;
+    await this.users.update(user.id, { name });
+    return issue(user);
+  }
+
+  /** Asks for the current password so a stolen session cannot lock the owner out. */
+  static async changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordInput): Promise<void> {
+    const user = await this.users.findOne({ where: { id: userId }, select: ['id', 'password'] });
+    if (!user) {
+      throw new NotFoundError('User not found', 'USER_NOT_FOUND');
+    }
+    if (!(await bcrypt.compare(currentPassword, user.password))) {
+      throw new UnauthorizedError('Current password is incorrect', 'INVALID_CURRENT_PASSWORD');
+    }
+    if (currentPassword === newPassword) {
+      throw new BadRequestError('The new password must be different', 'PASSWORD_UNCHANGED');
+    }
+    await this.users.update(userId, { password: await bcrypt.hash(newPassword, 10) });
   }
 
   /**

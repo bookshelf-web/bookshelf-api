@@ -60,6 +60,7 @@ describeMigrations('database migrations', () => {
       'InitialSchema1789776000000',
       'AddBookIndexes1789862400000',
       'AddRolesAndCompanies1789948800000',
+      'AddUserStatusAndAuditLog1790035200000',
     ]);
 
     for (const metadata of db.entityMetadatas) {
@@ -90,7 +91,7 @@ describeMigrations('database migrations', () => {
     const initSql = fs.readFileSync(path.join(__dirname, '../../scripts/init-db.sql'), 'utf8');
     await db.query(initSql);
 
-    await expect(db.runMigrations()).resolves.toHaveLength(3);
+    await expect(db.runMigrations()).resolves.toHaveLength(4);
 
     const rows = await db.query(`SELECT count(*)::int AS total FROM books`);
     expect(rows[0].total).toBe(0);
@@ -103,11 +104,12 @@ describeMigrations('database migrations', () => {
     await db.undoLastMigration();
     await db.undoLastMigration();
     await db.undoLastMigration();
+    await db.undoLastMigration();
 
     const tables: { table_name: string }[] = await db.query(
       `SELECT table_name FROM information_schema.tables
        WHERE table_schema = 'public'
-         AND table_name IN ('users', 'books', 'companies', 'company_members')`,
+         AND table_name IN ('users', 'books', 'companies', 'company_members', 'audit_logs')`,
     );
     expect(tables).toEqual([]);
   });

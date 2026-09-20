@@ -22,6 +22,7 @@ export const cleanupTestDatabase = async (): Promise<void> => {
       await AppDataSource.query('TRUNCATE TABLE books RESTART IDENTITY CASCADE');
       await AppDataSource.query('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
       await AppDataSource.query('TRUNCATE TABLE companies RESTART IDENTITY CASCADE');
+      await AppDataSource.query('TRUNCATE TABLE audit_logs RESTART IDENTITY CASCADE');
 
       // wait for the truncate to commit
       await new Promise(resolve => setTimeout(resolve, 10));

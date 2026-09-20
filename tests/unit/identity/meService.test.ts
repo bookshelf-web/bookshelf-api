@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { MeService } from '../../../src/contexts/identity/me/meService';
 import { verifyAuthToken } from '../../../src/shared/jwt';
 import { Role } from '../../../src/shared/roles';
@@ -85,5 +86,56 @@ describe('MeService.updateRoles', () => {
       statusCode: 400,
     });
     expect(users.findOne).not.toHaveBeenCalled();
+  });
+});
+
+describe('MeService.updateProfile', () => {
+  it('changes the name and returns a fresh session', async () => {
+    users.findOne.mockResolvedValue(account([Role.READER]));
+
+    const result = await MeService.updateProfile('u1', { name: 'Ana Souza' });
+
+    expect(users.update).toHaveBeenCalledWith('u1', { name: 'Ana Souza' });
+    expect(result.user.name).toBe('Ana Souza');
+    expect(verifyAuthToken(result.token).userId).toBe('u1');
+  });
+});
+
+describe('MeService.changePassword', () => {
+  const stored = async () => ({ id: 'u1', password: await bcrypt.hash('old-secret', 4) });
+
+  it('stores a hash of the new password', async () => {
+    users.findOne.mockResolvedValue(await stored());
+
+    await MeService.changePassword('u1', { currentPassword: 'old-secret', newPassword: 'new-secret' });
+
+    const [, change] = users.update.mock.calls[0];
+    expect(change.password).not.toBe('new-secret');
+    await expect(bcrypt.compare('new-secret', change.password)).resolves.toBe(true);
+  });
+
+  it('refuses a wrong current password', async () => {
+    users.findOne.mockResolvedValue(await stored());
+
+    await expect(
+      MeService.changePassword('u1', { currentPassword: 'guess', newPassword: 'new-secret' }),
+    ).rejects.toMatchObject({ code: 'INVALID_CURRENT_PASSWORD', statusCode: 401 });
+    expect(users.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses reusing the same password', async () => {
+    users.findOne.mockResolvedValue(await stored());
+
+    await expect(
+      MeService.changePassword('u1', { currentPassword: 'old-secret', newPassword: 'old-secret' }),
+    ).rejects.toMatchObject({ code: 'PASSWORD_UNCHANGED' });
+  });
+
+  it('fails for an unknown user', async () => {
+    users.findOne.mockResolvedValue(null);
+
+    await expect(
+      MeService.changePassword('gone', { currentPassword: 'a', newPassword: 'bbbbbb' }),
+    ).rejects.toMatchObject({ code: 'USER_NOT_FOUND' });
   });
 });

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Accounts with roles** (`reader`, `buyer`, `seller`, `admin`): register with an optional
   `roles` list, `GET /api/me`, `PATCH /api/me/roles`. The library (`/books`, `/stats`) now
   needs the `reader` role; existing accounts default to it. Admins come from `ADMIN_EMAILS`.
+- **User administration** (`/api/admin/users`): search, edit name/email/roles and suspend or reactivate
+  accounts, with guards (no self-suspension, the last active admin is protected) and an **audit log**
+  (`/api/admin/audit-logs`) that also records company verification. Users can change their own name and
+  password (`/api/me/profile`, `/api/me/password`). Suspended accounts cannot sign in.
 - **Companies**: `POST/GET/PUT /api/companies`, member management, and admin verification
   (`/api/admin/companies`). CNPJ is validated and unique.
 - **Bounded contexts** (`identity`, `library`) with ESLint-enforced boundaries, structured

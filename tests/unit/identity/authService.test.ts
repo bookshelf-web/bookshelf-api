@@ -105,6 +105,18 @@ describe('AuthService.login', () => {
     });
   });
 
+  it('refuses a suspended account only after the credentials check out', async () => {
+    repository.findOne.mockResolvedValue(await stored({ status: 'suspended' }));
+
+    await expect(AuthService.login({ email: 'ana@test.com', password: 'secret1' })).rejects.toMatchObject({
+      code: 'ACCOUNT_SUSPENDED',
+      statusCode: 403,
+    });
+    await expect(AuthService.login({ email: 'ana@test.com', password: 'wrong' })).rejects.toMatchObject({
+      code: 'INVALID_CREDENTIALS',
+    });
+  });
+
   it('promotes an existing account whose email was added to ADMIN_EMAILS', async () => {
     repository.findOne.mockResolvedValue(await stored({ email: 'admin@bookshelf.test' }));
 

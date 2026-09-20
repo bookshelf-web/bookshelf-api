@@ -3,6 +3,7 @@ import { ConflictError, ForbiddenError, NotFoundError } from '../../../shared/er
 import { Company } from '../models/Company';
 import { CompanyMember, CompanyRole } from '../models/CompanyMember';
 import { User } from '../models/User';
+import { AuditService } from '../../audit';
 import { AddMemberInput, CreateCompanyInput, UpdateCompanyInput } from './companiesSchemas';
 
 export interface CompanyView {
@@ -201,10 +202,20 @@ export class CompaniesService {
     if (!company) {
       throw new NotFoundError('Company not found', 'COMPANY_NOT_FOUND');
     }
+    const wasVerified = company.verified;
     company.verified = verified;
     company.verifiedAt = verified ? new Date() : null;
     company.verifiedBy = verified ? adminId : null;
-    return toCompanyView(await this.companies.save(company));
+    const saved = await this.companies.save(company);
+    if (wasVerified !== verified) {
+      await AuditService.record({
+        actorId: adminId,
+        action: verified ? 'company.verify' : 'company.unverify',
+        targetType: 'company',
+        targetId: companyId,
+      });
+    }
+    return toCompanyView(saved);
   }
 
   static async listForAdmin(verified?: boolean): Promise<CompanyView[]> {

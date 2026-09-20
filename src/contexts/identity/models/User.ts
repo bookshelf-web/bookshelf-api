@@ -8,6 +8,11 @@ import {
 } from 'typeorm';
 import { DEFAULT_ROLES, Role } from '../../../shared/roles';
 
+export enum UserStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -27,6 +32,10 @@ export class User {
     default: DEFAULT_ROLES,
   })
   roles!: Role[];
+
+  /** A suspended account cannot sign in. Changed by admins only. */
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
+  status!: UserStatus;
 
   // Never selected by default; queries that need it must opt in explicitly.
   @Column({ type: 'varchar', length: 255, select: false })

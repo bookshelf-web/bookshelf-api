@@ -81,7 +81,7 @@ npm run build && npm start   # production build
 | `DB_PASSWORD`    | yes, unless `DATABASE_URL`  | –             | |
 | `DB_NAME`        | yes, unless `DATABASE_URL`  | –             | |
 | `CORS_ORIGIN`    | no                          | localhost set | comma-separated list of allowed origins |
-| `ADMIN_EMAILS`   | no                          | –             | comma-separated emails granted the `admin` role at register/login |
+| `ADMIN_EMAILS`   | no                          | –             | comma-separated emails granted `admin` at register/login; meant to bootstrap the first admin, then manage users at `/admin/users` |
 | `LOG_LEVEL`      | no                          | `info`        | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` |
 
 ## Database migrations
@@ -152,6 +152,10 @@ Accounts, roles and companies (see [docs/architecture.md](docs/architecture.md))
 | GET    | `/companies`, `/companies/:id`    | The user's companies |
 | PUT    | `/companies/:id`                  | Update (owner or manager); the CNPJ is immutable |
 | GET/POST/DELETE | `/companies/:id/members` | List, add by email, remove (owner only) |
+| PATCH  | `/me/profile`, `/me/password`     | Change the display name; change the password (needs the current one) |
+| GET    | `/admin/users`, `/admin/users/:id` | Search/list and read accounts (admin) |
+| PATCH  | `/admin/users/:id`                | Edit name, email, roles or status (admin); last admin and self-suspension are protected |
+| GET    | `/admin/audit-logs`               | Who changed what (admin) |
 | GET    | `/admin/companies`                | List companies (admin) |
 | PATCH  | `/admin/companies/:id/verification` | Verify or revoke a company (admin) |
 

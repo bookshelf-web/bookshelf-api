@@ -6,6 +6,7 @@ import { CreateCompanyInput } from '../../../src/contexts/identity/companies/com
 import { Company } from '../../../src/contexts/identity/models/Company';
 import { CompanyMember, CompanyRole } from '../../../src/contexts/identity/models/CompanyMember';
 import { User } from '../../../src/contexts/identity/models/User';
+import { AuditService } from '../../../src/contexts/audit';
 
 const repos = {
   company: { exists: jest.fn(), find: jest.fn(), findOne: jest.fn(), save: jest.fn() },
@@ -19,6 +20,8 @@ const repos = {
   },
   user: { findOne: jest.fn() },
 };
+jest.mock('../../../src/contexts/audit', () => ({ AuditService: { record: jest.fn() } }));
+
 const manager = { create: jest.fn((_entity: unknown, data: object) => data), save: jest.fn(async (row: object) => ({ id: 'c1', ...row })) };
 
 jest.mock('../../../src/config/database', () => ({
@@ -245,6 +248,20 @@ describe('admin', () => {
     expect(view.verified).toBe(true);
     expect(view.verifiedAt).toBeInstanceOf(Date);
     expect(repos.company.save).toHaveBeenCalledWith(expect.objectContaining({ verifiedBy: 'admin-1' }));
+    expect(AuditService.record).toHaveBeenCalledWith({
+      actorId: 'admin-1',
+      action: 'company.verify',
+      targetType: 'company',
+      targetId: 'c1',
+    });
+  });
+
+  it('does not audit a verification that changes nothing', async () => {
+    repos.company.findOne.mockResolvedValue(company({ verified: true }));
+
+    await CompaniesService.setVerified('admin-1', 'c1', true);
+
+    expect(AuditService.record).not.toHaveBeenCalled();
   });
 
   it('can revoke a verification', async () => {
@@ -254,6 +271,7 @@ describe('admin', () => {
 
     expect(view.verified).toBe(false);
     expect(view.verifiedAt).toBeNull();
+    expect(AuditService.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'company.unverify' }));
   });
 
   it('answers 404 for an unknown company', async () => {

@@ -3,7 +3,7 @@ import { authMiddleware } from '../../../middlewares/authMiddleware';
 import { validate } from '../../../middlewares/validate';
 import { asyncHandler } from '../../../shared/asyncHandler';
 import { MeService } from './meService';
-import { updateRolesSchema } from './meSchemas';
+import { changePasswordSchema, updateProfileSchema, updateRolesSchema } from './meSchemas';
 
 const router = Router();
 
@@ -26,6 +26,45 @@ router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     res.json(await MeService.getProfile(userId(req)));
+  }),
+);
+
+/**
+ * @swagger
+ * /api/me/profile:
+ *   patch:
+ *     summary: Change the display name
+ *     tags: [Me]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Profile updated; returns a fresh token }
+ */
+router.patch(
+  '/profile',
+  validate({ body: updateProfileSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const result = await MeService.updateProfile(userId(req), req.body);
+    res.json({ message: 'Profile updated', ...result });
+  }),
+);
+
+/**
+ * @swagger
+ * /api/me/password:
+ *   patch:
+ *     summary: Change the password (needs the current one)
+ *     tags: [Me]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Password changed }
+ *       401: { description: Current password is incorrect }
+ */
+router.patch(
+  '/password',
+  validate({ body: changePasswordSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    await MeService.changePassword(userId(req), req.body);
+    res.json({ message: 'Password changed' });
   }),
 );
 
