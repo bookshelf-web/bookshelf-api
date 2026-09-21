@@ -91,6 +91,17 @@ export const ordersQuerySchema = z.object({
   limit,
 });
 
+export const adminOrdersQuerySchema = z.object({
+  status: z.nativeEnum(OrderStatus).optional(),
+  search: z.string().trim().min(1).max(36).optional(),
+  page,
+  limit,
+});
+
+export const adminListingsQuerySchema = z.object({ status: z.nativeEnum(ListingStatus).optional(), page, limit });
+
+export const removeListingSchema = z.object({ reason: z.string().trim().min(1).max(500).optional() });
+
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
 export type ListingsQuery = z.infer<typeof listingsQuerySchema>;

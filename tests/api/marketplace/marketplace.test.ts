@@ -9,9 +9,11 @@ import { ApiClient } from '../../helpers/apiClient';
 import { TestDataBuilder } from '../../helpers/testDataBuilder';
 import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../../setup/testDatabase';
 
-async function signUp(roles: string[]) {
+const ADMIN_EMAIL = 'admin@bookshelf.test';
+
+async function signUp(roles: string[], overrides: Record<string, unknown> = {}) {
   const api = new ApiClient();
-  const response = await api.register(TestDataBuilder.createUser({ roles }));
+  const response = await api.register(TestDataBuilder.createUser({ roles, ...overrides }));
   api.setToken(response.body.token);
   return { api, user: response.body.user };
 }
@@ -548,6 +550,59 @@ describe('marketplace', () => {
 
       expect(paid.body.orders).toHaveLength(1);
       expect(cancelled.body.orders).toHaveLength(0);
+    });
+  });
+  describe('moderation (admin)', () => {
+    it('lets an admin see every order and filter them, but not anyone else', async () => {
+      const admin = await signUp(['reader'], { email: ADMIN_EMAIL });
+      const seller = await signUp(['seller']);
+      const buyer = await signUp(['buyer']);
+      const placed = await order(buyer, (await listBook(seller)).id);
+      const orderId = placed.body.order.id as string;
+
+      const all = await admin.api.call('get', '/admin/marketplace/orders');
+      const byPrefix = await admin.api.call('get', `/admin/marketplace/orders?search=${orderId.slice(0, 8)}`);
+      const none = await admin.api.call('get', '/admin/marketplace/orders?status=delivered');
+      const one = await admin.api.call('get', `/admin/marketplace/orders/${orderId}`);
+      const denied = await buyer.api.call('get', '/admin/marketplace/orders');
+
+      expect(all.body.orders).toHaveLength(1);
+      expect(all.body.orders[0]).toMatchObject({ id: orderId, buyer: { id: buyer.user.id }, seller: { id: seller.user.id } });
+      expect(byPrefix.body.orders).toHaveLength(1);
+      expect(none.body.orders).toHaveLength(0);
+      expect(one.body.order.items).toHaveLength(1);
+      expect(denied.status).toBe(403);
+    });
+
+    it('returns 404 for an unknown order', async () => {
+      const admin = await signUp(['reader'], { email: ADMIN_EMAIL });
+
+      const response = await admin.api.call('get', '/admin/marketplace/orders/00000000-0000-4000-8000-000000000000');
+
+      expect(response.status).toBe(404);
+      expect(response.body.code).toBe('ORDER_NOT_FOUND');
+    });
+
+    it('lets an admin take a listing down, and audits it', async () => {
+      const admin = await signUp(['reader'], { email: ADMIN_EMAIL });
+      const seller = await signUp(['seller']);
+      const buyer = await signUp(['buyer']);
+      const listing = await listBook(seller);
+
+      const listed = await admin.api.call('get', '/admin/marketplace/listings?status=active');
+      expect(listed.body.listings).toHaveLength(1);
+
+      const removed = await admin.api.call('post', `/admin/marketplace/listings/${listing.id}/remove`, { reason: 'Abuso' });
+      expect(removed.body.listing.status).toBe('removed');
+      expect((await buyer.api.call('get', '/marketplace/listings')).body.listings).toHaveLength(0);
+
+      const audit = await admin.api.call('get', '/admin/audit-logs?targetType=listing');
+      expect(audit.body.entries[0]).toMatchObject({ action: 'marketplace.listing.remove', targetId: listing.id });
+
+      const missing = await admin.api.call('post', '/admin/marketplace/listings/00000000-0000-4000-8000-000000000000/remove', {});
+      expect(missing.status).toBe(404);
+      const denied = await seller.api.call('post', `/admin/marketplace/listings/${listing.id}/remove`, {});
+      expect(denied.status).toBe(403);
     });
   });
 });

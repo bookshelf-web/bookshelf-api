@@ -8,6 +8,8 @@ import { Role } from '../../shared/roles';
 import { PaymentsService } from '../payments';
 import { ListingsService } from './listingsService';
 import {
+  adminListingsQuerySchema,
+  adminOrdersQuerySchema,
   createListingSchema,
   createOrderSchema,
   idParamsSchema,
@@ -15,6 +17,7 @@ import {
   myListingsQuerySchema,
   ordersQuerySchema,
   payOrderSchema,
+  removeListingSchema,
   shipOrderSchema,
   updateListingSchema,
 } from './marketplaceSchemas';
@@ -295,6 +298,84 @@ marketplaceRoutes.post(
   validate({ params: idParamsSchema }),
   asyncHandler(async (req: Request, res: Response) => {
     res.json({ order: await OrdersService.deliver(userId(req), req.params.id) });
+  }),
+);
+
+// ─── Moderation (admin, read-only for orders) ────────────────────────────────
+
+export const adminMarketplaceRoutes = Router();
+adminMarketplaceRoutes.use(withContext('marketplace'), authMiddleware, requireRole(Role.ADMIN));
+
+/**
+ * @swagger
+ * /api/admin/marketplace/orders:
+ *   get:
+ *     summary: Every order, filtered by status or id prefix (admin only, read-only)
+ *     tags: [Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: A page of orders }
+ */
+adminMarketplaceRoutes.get(
+  '/orders',
+  validate({ query: adminOrdersQuerySchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.json(await OrdersService.listForAdmin(adminOrdersQuerySchema.parse(req.query)));
+  }),
+);
+
+/**
+ * @swagger
+ * /api/admin/marketplace/orders/{id}:
+ *   get:
+ *     summary: One order (admin only)
+ *     tags: [Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: The order }
+ */
+adminMarketplaceRoutes.get(
+  '/orders/:id',
+  validate({ params: idParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.json({ order: await OrdersService.getForAdmin(req.params.id) });
+  }),
+);
+
+/**
+ * @swagger
+ * /api/admin/marketplace/listings:
+ *   get:
+ *     summary: Every listing whatever its status (admin only)
+ *     tags: [Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: A page of listings }
+ */
+adminMarketplaceRoutes.get(
+  '/listings',
+  validate({ query: adminListingsQuerySchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { status, page, limit } = adminListingsQuerySchema.parse(req.query);
+    res.json(await ListingsService.listForAdmin(status, page, limit));
+  }),
+);
+
+/**
+ * @swagger
+ * /api/admin/marketplace/listings/{id}/remove:
+ *   post:
+ *     summary: Take a listing down, with an optional reason (admin only, audited)
+ *     tags: [Admin]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: The removed listing }
+ */
+adminMarketplaceRoutes.post(
+  '/listings/:id/remove',
+  validate({ params: idParamsSchema, body: removeListingSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.json({ listing: await ListingsService.adminRemove(userId(req), req.params.id, req.body.reason) });
   }),
 );
 

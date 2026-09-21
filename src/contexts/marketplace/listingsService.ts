@@ -2,6 +2,7 @@ import { AppDataSource } from '../../config/database';
 import { CatalogBook, CatalogBookStatus, CatalogService, normalizeIsbn } from '../catalog';
 import { CompaniesService, IdentityDirectory } from '../identity';
 import { ForbiddenError, NotFoundError } from '../../shared/errors';
+import { AuditService } from '../audit';
 import type { CreateListingInput, ListingsQuery, UpdateListingInput } from './marketplaceSchemas';
 import { Listing, ListingStatus } from './models/Listing';
 
@@ -121,6 +122,35 @@ export class ListingsService {
     const listing = await this.ownedBy(sellerId, id);
     listing.status = ListingStatus.REMOVED;
     await this.listings.save(listing);
+  }
+
+  /** Every listing whatever its status, for moderation. */
+  static async listForAdmin(status: ListingStatus | undefined, page: number, limit: number) {
+    const [rows, total] = await this.listings.findAndCount({
+      where: status ? { status } : {},
+      relations: { catalogBook: true },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { listings: await this.toViews(rows), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  /** An admin takes a listing down, e.g. for abuse. Open orders keep their frozen items. */
+  static async adminRemove(adminId: string, id: string, reason?: string): Promise<ListingView> {
+    const listing = await this.listings.findOne({ where: { id }, relations: { catalogBook: true } });
+    if (!listing) throw new NotFoundError('Listing not found', 'LISTING_NOT_FOUND');
+
+    listing.status = ListingStatus.REMOVED;
+    await this.listings.save(listing);
+    await AuditService.record({
+      actorId: adminId,
+      action: 'marketplace.listing.remove',
+      targetType: 'listing',
+      targetId: id,
+      changes: reason ? { reason } : null,
+    });
+    return (await this.toViews([listing]))[0];
   }
 
   private static async ownedBy(sellerId: string, id: string): Promise<Listing> {

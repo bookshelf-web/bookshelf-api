@@ -214,6 +214,31 @@ export class OrdersService {
     return this.list({ sellerId }, query);
   }
 
+  // ─── Admin (read-only) ──────────────────────────────────────────────────
+
+  static async listForAdmin(query: OrdersQuery & { search?: string }) {
+    const qb = this.orders
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'item')
+      .orderBy('order.createdAt', 'DESC')
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit);
+    if (query.status) qb.andWhere('order.status = :status', { status: query.status });
+    if (query.search) qb.andWhere('CAST(order.id AS text) ILIKE :search', { search: `${query.search}%` });
+
+    const [rows, total] = await qb.getManyAndCount();
+    return {
+      orders: await this.toViews(rows),
+      pagination: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
+  }
+
+  static async getForAdmin(orderId: string): Promise<OrderView> {
+    const order = await this.orders.findOne({ where: { id: orderId }, relations: { items: true } });
+    if (!order) throw new NotFoundError('Order not found', 'ORDER_NOT_FOUND');
+    return (await this.toViews([order]))[0];
+  }
+
   // ─── Payment hook ────────────────────────────────────────────────────────
 
   static async markPaid(charge: PaymentCharge): Promise<void> {
