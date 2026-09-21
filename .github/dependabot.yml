@@ -5,11 +5,36 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Safe updates arrive together in one PR. Majors are never grouped, so each one gets its own PR and
+    # CI tells which upgrade breaks. Security updates are not affected by `ignore`.
     groups:
-      dev-dependencies:
-        dependency-type: development
-      production-dependencies:
-        dependency-type: production
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Structural packages whose majors need code migrations. Review them quarterly and upgrade one at a
+      # time on purpose (express 5, typeorm 1.x, zod 4, typescript 7, eslint 10, jest 30...).
+      - dependency-name: express
+        update-types: ['version-update:semver-major']
+      - dependency-name: typeorm
+        update-types: ['version-update:semver-major']
+      - dependency-name: zod
+        update-types: ['version-update:semver-major']
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: jest
+        update-types: ['version-update:semver-major']
+      - dependency-name: ts-jest
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/jest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@typescript-eslint/*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
