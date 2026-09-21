@@ -37,6 +37,9 @@ Express, TypeORM and PostgreSQL.
 - Filtering (status, rating, title, author, full-text search), sorting and pagination
 - Reading status (`to_read` / `reading` / `read`) with automatic start/finish timestamps
 - Reading statistics
+- Accounts with combinable roles, companies and admin user management
+- Shared book catalog (one entry per ISBN) with admin moderation
+- Second-hand bookstore: listings, orders, shipping and pickup, with **simulated** payments (test only)
 - Request validation with Zod
 - OpenAPI / Swagger documentation at `/api-docs`
 - Automated API test suite (Jest + Supertest)
@@ -82,6 +85,7 @@ npm run build && npm start   # production build
 | `DB_NAME`        | yes, unless `DATABASE_URL`  | –             | |
 | `CORS_ORIGIN`    | no                          | localhost set | comma-separated list of allowed origins |
 | `ADMIN_EMAILS`   | no                          | –             | comma-separated emails granted `admin` at register/login; meant to bootstrap the first admin, then manage users at `/admin/users` |
+| `ALLOW_SIMULATED_PAYMENTS` | no             | `false`       | payments are simulated only; outside production they are always on, in production they answer `503` unless this is `true` (demo deployments) |
 | `LOG_LEVEL`      | no                          | `info`        | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` |
 
 ## Database migrations
@@ -158,6 +162,10 @@ Accounts, roles and companies (see [docs/architecture.md](docs/architecture.md))
 | GET    | `/admin/audit-logs`               | Who changed what (admin) |
 | GET    | `/catalog/books`, `/catalog/books/:id` | Search the shared catalog (any signed-in user) |
 | GET/PATCH/POST | `/admin/catalog/...`      | Moderation: review queue, direct edits, hide/restore, decide proposed edits (admin) |
+| GET/POST/PATCH/DELETE | `/marketplace/listings...` | Browse the bookstore; sellers create, edit, pause and remove listings |
+| GET/POST | `/marketplace/orders...`, `/marketplace/sales` | Place, pay (Pix or test card), cancel, ship and deliver orders |
+| POST   | `/payments/webhook`               | Signed events from the simulated gateway |
+| GET/POST | `/admin/marketplace/...`        | Every order (read-only) and listing takedown (admin) |
 | GET    | `/admin/companies`                | List companies (admin) |
 | PATCH  | `/admin/companies/:id/verification` | Verify or revoke a company (admin) |
 
@@ -197,7 +205,7 @@ access token with **Actions: read and write** on the two test repositories.
 
 ## Architecture
 
-A modular monolith organised in bounded contexts (`identity`, `library`, later `catalog`,
+A modular monolith organised in bounded contexts (`identity`, `library`, `catalog`, `audit`,
 `marketplace`, `payments`) whose boundaries are enforced by ESLint, with structured logs
 and a request id on every response. See [docs/architecture.md](docs/architecture.md).
 
@@ -209,6 +217,10 @@ src/
   contexts/
     identity/   auth, /me, companies (routes, services, schemas, models)
     library/    books and stats (routes, services, schemas, models)
+    catalog/    shared books, revisions and moderation
+    marketplace/ listings, orders, admin moderation
+    payments/   gateway port, simulated gateway, charges, webhook
+    audit/      admin action log
   middlewares/  auth, role guard, request validation, error handling
   migrations/   versioned TypeORM migrations
   shared/       errors, jwt, roles, logger, request context, asyncHandler

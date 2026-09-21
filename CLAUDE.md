@@ -98,3 +98,6 @@ CI (`.github/workflows/ci.yml`) runs lint + typecheck + tests (Postgres service,
   admin (*Settings → Rules → Rulesets → Import*); the `gh` account here cannot apply it.
 - Schema changes need a migration in `src/migrations` (`npm run migration:generate`); `DB_SYNC` no longer
   exists. Migrations run on startup outside `NODE_ENV=test`.
+- Payments are **simulated only** and must stay that way: never add a real payment SDK (ESLint blocks it), never
+  make the Pix code a valid BR Code, and keep production off unless `ALLOW_SIMULATED_PAYMENTS=true`.
+  See `docs/architecture.md`.

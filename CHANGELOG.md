@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   approves or rejects. **Breaking:** ISBNs are validated (check digit) and normalised to ISBN-13, the same
   ISBN by two readers now shares one catalog book instead of conflicting, and `PUT /api/books/:id` may
   answer with `pendingRevision` instead of applying descriptive changes. Existing books were migrated.
+- **Second-hand bookstore** (`/api/marketplace`, `/api/admin/marketplace`): listings by people or verified
+  companies, single-seller orders with stock reserved under row locks, flat shipping per listing or free
+  pickup, tracking codes, and admin views of orders and listing takedown. Unpaid orders expire.
+- **Simulated payments** (`/api/payments/webhook`): Pix and test-card charges behind a `PaymentGateway`
+  port, confirmed through an HMAC-signed, idempotent webhook. Built so a real payment is impossible: the Pix
+  code is deliberately not a valid BR Code, production answers `503` unless `ALLOW_SIMULATED_PAYMENTS=true`,
+  payment SDK imports are banned by ESLint, and only test card numbers are accepted. See
+  `docs/architecture.md`.
 - **Companies**: `POST/GET/PUT /api/companies`, member management, and admin verification
   (`/api/admin/companies`). CNPJ is validated and unique.
 - **Bounded contexts** (`identity`, `library`) with ESLint-enforced boundaries, structured
